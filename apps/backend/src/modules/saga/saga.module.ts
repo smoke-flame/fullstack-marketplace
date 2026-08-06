@@ -1,0 +1,5 @@
+import { Global, Module } from '@nestjs/common';
+import { SagaOrchestrator } from './saga.orchestrator';
+@Global()
+@Module({ providers: [SagaOrchestrator], exports: [SagaOrchestrator] })
+export class SagaModule {}

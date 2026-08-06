@@ -1,0 +1,52 @@
+{
+  "name": "@marketplace/contracts",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "./common/id": {
+      "types": "./dist/common/id.d.ts",
+      "default": "./dist/common/id.js"
+    },
+    "./models/user": {
+      "types": "./dist/models/user.d.ts",
+      "default": "./dist/models/user.js"
+    },
+    "./models/userRole": {
+      "types": "./dist/models/userRole.d.ts",
+      "default": "./dist/models/userRole.js"
+    },
+    "./models/index": {
+      "types": "./dist/models/index.d.ts",
+      "default": "./dist/models/index.js"
+    },
+    "./api/auth/register": {
+      "types": "./dist/api/auth/register.d.ts",
+      "default": "./dist/api/auth/register.js"
+    },
+    "./api/auth/login": {
+      "types": "./dist/api/auth/login.d.ts",
+      "default": "./dist/api/auth/login.js"
+    },
+    "./api/auth/refresh": {
+      "types": "./dist/api/auth/refresh.d.ts",
+      "default": "./dist/api/auth/refresh.js"
+    },
+    "./errors/gateway": {
+      "types": "./dist/errors/gateway.d.ts",
+      "default": "./dist/errors/gateway.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --max-warnings=0"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@marketplace/eslint-config": "workspace:*",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.1"
+  }
+}

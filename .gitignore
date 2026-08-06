@@ -1,0 +1,8 @@
+node_modules
+.next
+dist
+packages/*/dist
+coverage
+.env
+!.env.example
+apps/api/prisma/migrations

@@ -1,0 +1,15 @@
+{
+  "name": "marketplace",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "engines": { "node": "22.x", "pnpm": ">=9" },
+  "scripts": {
+    "dev": "pnpm --filter @marketplace/contracts build && pnpm --parallel --filter @marketplace/backend --filter @marketplace/frontend dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write .",
+    "db:generate": "pnpm --filter @marketplace/backend prisma:generate",
+    "db:migrate": "pnpm --filter @marketplace/backend prisma:migrate"
+  },
+  "devDependencies": { "prettier": "^3.4.2", "typescript": "^5.7.2" }
+}
