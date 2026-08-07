@@ -8,3 +8,9 @@ export const registerUserRequestSchema = z.object({
 });
 
 export type RegisterUserRequest = z.infer<typeof registerUserRequestSchema>;
+
+export const registerUserResponseSchema = z.object({
+  userId: z.string().uuid(),
+});
+
+export type RegisterUserResponse = z.infer<typeof registerUserResponseSchema>;

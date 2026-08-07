@@ -6,6 +6,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { RabbitmqModule } from './modules/rabbitmq/rabbitmq.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { SagaModule } from './modules/saga/saga.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { GatewayModule } from './modules/gateway/gateway.module';
 import { CorrelationIdMiddleware } from './modules/gateway/middleware/correlation-id.middleware';
 import { GatewayExceptionFilter } from './modules/gateway/gateway-exception.filter';
@@ -21,6 +22,7 @@ import { RateLimitGuard } from './modules/gateway/guards/rate-limit.guard';
     RabbitmqModule,
     RedisModule,
     SagaModule,
+    NotificationModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GatewayExceptionFilter },

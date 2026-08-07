@@ -13,6 +13,7 @@ RUN pnpm --filter @marketplace/contracts build
 WORKDIR /app/apps/frontend
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+RUN pnpm install
 RUN pnpm build
 EXPOSE 3000
 CMD ["pnpm", "start"]

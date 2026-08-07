@@ -1,9 +1,10 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 import { env } from './config/env';
-import { validationExceptionFactory } from './modules/gateway/errors/validation-error';
+import { validationExceptionFactory } from './modules/common/errors/validation-error';
+import { RabbitMQEventType, createRmqOptions } from './modules/rabbitmq/rabbitmq.constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -16,14 +17,7 @@ async function bootstrap() {
       exceptionFactory: validationExceptionFactory,
     }),
   );
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [env.RABBITMQ_URL],
-      queue: 'marketplace.api',
-      queueOptions: { durable: true },
-    },
-  });
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.USER_CREATED));
   await app.startAllMicroservices();
   await app.listen(env.PORT, '0.0.0.0');
   Logger.log(`Gateway listening on http://localhost:${env.PORT}`, 'Bootstrap');

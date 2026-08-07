@@ -15,6 +15,16 @@ export const gatewayErrorCodes = {
 
 export type GatewayErrorCode = (typeof gatewayErrorCodes)[keyof typeof gatewayErrorCodes];
 
+export const authErrorCodes = {
+  emailTaken: 'auth.EMAIL_TAKEN',
+  passwordTooWeak: 'auth.PASSWORD_TOO_WEAK',
+  invalidCredentials: 'auth.INVALID_CREDENTIALS',
+  refreshTokenInvalid: 'auth.REFRESH_TOKEN_INVALID',
+  refreshTokenRevoked: 'auth.REFRESH_TOKEN_REVOKED',
+} as const;
+
+export type AuthErrorCode = (typeof authErrorCodes)[keyof typeof authErrorCodes];
+
 export const validationErrorDetailSchema = z.object({
   field: z.string(),
   code: z.string(),

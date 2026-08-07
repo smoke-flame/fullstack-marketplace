@@ -9,7 +9,7 @@ import {
 import { gatewayErrorCodes, type ApiError } from '@marketplace/contracts/errors/gateway';
 import type { Response } from 'express';
 import type { GatewayRequest } from './middleware/correlation-id.middleware';
-import { GatewayHttpException } from './errors/gateway-http.exception';
+import { BaseHttpException } from '../common/errors/base-http.exception';
 
 @Catch()
 export class GatewayExceptionFilter implements ExceptionFilter {
@@ -26,7 +26,7 @@ export class GatewayExceptionFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : String(exception),
       );
     const body: ApiError =
-      exception instanceof GatewayHttpException
+      exception instanceof BaseHttpException
         ? {
             code: exception.code,
             message: exception.displayMessage,

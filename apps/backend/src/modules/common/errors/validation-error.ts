@@ -3,7 +3,7 @@ import {
   gatewayErrorCodes,
   type ValidationErrorDetail,
 } from '@marketplace/contracts/errors/gateway';
-import { GatewayHttpException } from './gateway-http.exception';
+import { BaseHttpException } from './base-http.exception';
 
 function flatten(errors: ValidationError[], parent = ''): ValidationErrorDetail[] {
   return errors.flatMap((error) => {
@@ -17,12 +17,12 @@ function flatten(errors: ValidationError[], parent = ''): ValidationErrorDetail[
   });
 }
 
-export class GatewayValidationException extends GatewayHttpException {
+export class ValidationException extends BaseHttpException {
   constructor(details: ValidationErrorDetail[]) {
     super(gatewayErrorCodes.validationError, 'Validation failed', 400, details);
   }
 }
 
 export function validationExceptionFactory(errors: ValidationError[]) {
-  return new GatewayValidationException(flatten(errors));
+  return new ValidationException(flatten(errors));
 }

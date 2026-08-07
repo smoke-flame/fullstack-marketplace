@@ -34,6 +34,14 @@
     "./errors/gateway": {
       "types": "./dist/errors/gateway.d.ts",
       "default": "./dist/errors/gateway.js"
+    },
+    "./api/auth/me": {
+      "types": "./dist/api/auth/me.d.ts",
+      "default": "./dist/api/auth/me.js"
+    },
+    "./api/auth/logout": {
+      "types": "./dist/api/auth/logout.d.ts",
+      "default": "./dist/api/auth/logout.js"
     }
   },
   "scripts": {

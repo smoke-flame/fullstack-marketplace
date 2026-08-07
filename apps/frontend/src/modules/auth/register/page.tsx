@@ -48,12 +48,9 @@ export function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       const roles: UserRole[] = [UserRole.BUYER, ...(isSeller ? [UserRole.SELLER] : [])];
-      const response = await registerUser({ email: data.email, password: data.password, roles });
-      setAccessToken(response.accessToken);
-      setRefreshToken(response.refreshToken);
-      dispatch(setCredentials({ user: response.user, accessToken: response.accessToken, refreshToken: response.refreshToken }));
-      toast.success('Account created!');
-      router.push('/');
+      await registerUser({ email: data.email, password: data.password, roles });
+      toast.success('Account created! Please sign in.');
+      router.push('/login');
     } catch {
       // error handled by interceptor toast
     }

@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { env } from '../../../config/env';
 import { RedisService } from '../../redis/redis.service';
 import type { GatewayRequest } from '../middleware/correlation-id.middleware';
-import { RateLimitExceededException } from '../errors/gateway-errors';
+import { RateLimitExceededException } from '../../common/errors/gateway-errors';
 import { RATE_LIMIT_GROUP, type RateLimitGroupName } from '../decorators/rate-limit-group.decorator';
 
 @Injectable()

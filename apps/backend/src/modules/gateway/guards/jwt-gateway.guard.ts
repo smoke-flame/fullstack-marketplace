@@ -3,8 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { uuidV4Schema } from '@marketplace/contracts/common/id';
 import { userRoleSchema } from '@marketplace/contracts/models/user';
-import { IS_PUBLIC } from '../decorators/public.decorator';
-import { GatewayUnauthorizedException } from '../errors/gateway-errors';
+import { IS_PUBLIC } from '../../common/decorators/public.decorator';
+import { UnauthorizedException } from '../../common/errors/gateway-errors';
 import type { GatewayRequest } from '../middleware/correlation-id.middleware';
 
 interface JwtClaims {
@@ -28,14 +28,14 @@ export class JwtGatewayGuard implements CanActivate {
     const header = request.header('authorization');
     if (!header && isPublic) return true;
     const token = header?.match(/^Bearer\s+(.+)$/i)?.[1];
-    if (!token) throw new GatewayUnauthorizedException();
+    if (!token) throw new UnauthorizedException();
     try {
       const payload = await this.jwt.verifyAsync<JwtClaims>(token);
       const roles = userRoleSchema.array().parse(payload.roles);
       request.user = { id: uuidV4Schema.parse(payload.sub), roles };
       return true;
     } catch {
-      throw new GatewayUnauthorizedException();
+      throw new UnauthorizedException();
     }
   }
 }

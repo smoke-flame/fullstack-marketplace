@@ -1,12 +1,9 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import type {
-  GatewayErrorCode,
-  ValidationErrorDetail,
-} from '@marketplace/contracts/errors/gateway';
+import type { ValidationErrorDetail } from '@marketplace/contracts/errors/gateway';
 
-export class GatewayHttpException extends HttpException {
+export class BaseHttpException extends HttpException {
   constructor(
-    public readonly code: GatewayErrorCode,
+    public readonly code: string,
     public readonly displayMessage: string,
     status: HttpStatus,
     public readonly details?: ValidationErrorDetail[],

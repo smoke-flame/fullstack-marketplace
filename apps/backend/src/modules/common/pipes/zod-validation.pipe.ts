@@ -1,6 +1,6 @@
 import { PipeTransform, Injectable } from '@nestjs/common';
 import { ZodSchema } from 'zod';
-import { GatewayValidationException } from '../errors/validation-error';
+import { ValidationException } from '../errors/validation-error';
 
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
@@ -14,7 +14,7 @@ export class ZodValidationPipe implements PipeTransform {
         code: issue.code,
         message: issue.message,
       }));
-      throw new GatewayValidationException(details);
+      throw new ValidationException(details);
     }
     return result.data;
   }

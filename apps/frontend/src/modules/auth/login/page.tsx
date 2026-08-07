@@ -13,6 +13,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { loginUserRequestSchema, type LoginUserRequest } from '@marketplace/contracts/api/auth/login';
+import type { LoginResponse } from '@marketplace/contracts/api/auth/login';
 
 export function LoginPage() {
   const router = useRouter();
@@ -31,7 +32,6 @@ export function LoginPage() {
       const response = await loginUser(data);
       setAccessToken(response.accessToken);
       setRefreshToken(response.refreshToken);
-      dispatch(setCredentials({ user: response.user, accessToken: response.accessToken, refreshToken: response.refreshToken }));
       toast.success('Welcome back!');
       router.push('/');
     } catch {
