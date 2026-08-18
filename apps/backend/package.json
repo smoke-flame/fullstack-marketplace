@@ -8,7 +8,8 @@
     "start": "node dist/main.js",
     "lint": "eslint src --max-warnings=0",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@marketplace/contracts": "workspace:*",

@@ -13,17 +13,23 @@ export class PrismaPaymentRepository implements PaymentRepository {
     amount: number;
     status: PaymentStatus;
     reason?: string;
-  }): Promise<PaymentResponse> {
-    const payment = await this.prisma.payment.create({
-      data: {
-        orderId: data.orderId,
-        buyerId: data.buyerId,
-        amount: data.amount,
-        status: data.status,
-        reason: data.reason ?? null,
-      },
-    });
-    return this.mapPayment(payment);
+  }): Promise<{ payment: PaymentResponse; created: boolean }> {
+    try {
+      const payment = await this.prisma.payment.create({
+        data: {
+          orderId: data.orderId,
+          buyerId: data.buyerId,
+          amount: data.amount,
+          status: data.status,
+          reason: data.reason ?? null,
+        },
+      });
+      return { payment: this.mapPayment(payment), created: true };
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code !== 'P2002') throw error;
+      const payment = await this.prisma.payment.findUniqueOrThrow({ where: { orderId: data.orderId } });
+      return { payment: this.mapPayment(payment), created: false };
+    }
   }
 
   async findByOrderId(orderId: string): Promise<PaymentResponse | null> {
@@ -51,6 +57,15 @@ export class PrismaPaymentRepository implements PaymentRepository {
       },
     });
     return this.mapPayment(payment);
+  }
+
+  async transitionStatus(id: string, from: PaymentStatus, to: PaymentStatus, reason?: string): Promise<PaymentResponse | null> {
+    const result = await this.prisma.payment.updateMany({
+      where: { id, status: from },
+      data: { status: to, reason: reason ?? null },
+    });
+    if (!result.count) return null;
+    return this.findByOrderId((await this.prisma.payment.findUniqueOrThrow({ where: { id } })).orderId);
   }
 
   async findByBuyerIdAndOrderId(buyerId: string, orderId: string): Promise<PaymentResponse[]> {

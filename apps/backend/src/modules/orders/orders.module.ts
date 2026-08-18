@@ -15,7 +15,6 @@ import { RabbitmqModule } from '@modules/rabbitmq/rabbitmq.module';
   imports: [PrismaModule, RabbitmqModule],
   providers: [
     OrderService,
-    OrderConsumer,
     OrderSagaOrchestrator,
     PrismaOrderRepository,
     { provide: ORDER_REPOSITORY, useClass: PrismaOrderRepository },
@@ -23,7 +22,7 @@ import { RabbitmqModule } from '@modules/rabbitmq/rabbitmq.module';
     { provide: OUTBOX_REPOSITORY, useClass: PrismaOutboxRepository },
     OutboxPublisherService,
   ],
-  controllers: [OrderController],
+  controllers: [OrderController, OrderConsumer],
   exports: [OrderService],
 })
 export class OrdersModule {}

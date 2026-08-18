@@ -15,7 +15,7 @@ export interface CategoryTree extends CategoryEntity {
 export interface CategoryRepository {
   createCategory(data: { title: string; parentId?: string | null }): Promise<CategoryEntity>;
   findCategoryById(id: string): Promise<CategoryEntity | null>;
-  findAllCategories(): Promise<CategoryEntity[]>;
+  findAllCategories(query?: string): Promise<CategoryEntity[]>;
   buildTree(categories: CategoryEntity[]): CategoryTree[];
   getDepth(node: CategoryTree): number;
 }

@@ -4,5 +4,6 @@ dist
 packages/*/dist
 coverage
 .env
+.kilo
 !.env.example
 apps/api/prisma/migrations

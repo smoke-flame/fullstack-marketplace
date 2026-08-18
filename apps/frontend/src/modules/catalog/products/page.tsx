@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { getAllProducts, getAllCategories } from '@/modules/catalog/api';
@@ -43,7 +42,6 @@ export function ProductsPage() {
     <div className="mx-auto max-w-6xl px-6 py-12">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Products</h1>
-        <Link href="/products"><Button>Add Product</Button></Link>
       </div>
 
       <div className="mt-6 flex flex-col gap-4 sm:flex-row">

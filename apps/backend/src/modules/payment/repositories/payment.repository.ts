@@ -7,10 +7,11 @@ export interface PaymentRepository {
     amount: number;
     status: PaymentStatus;
     reason?: string;
-  }): Promise<PaymentResponse>;
+  }): Promise<{ payment: PaymentResponse; created: boolean }>;
   findByOrderId(orderId: string): Promise<PaymentResponse | null>;
   findByIdempotentKey(sagaId: string): Promise<PaymentResponse | null>;
   updateStatus(id: string, status: PaymentStatus, reason?: string): Promise<PaymentResponse>;
+  transitionStatus(id: string, from: PaymentStatus, to: PaymentStatus, reason?: string): Promise<PaymentResponse | null>;
   findByBuyerIdAndOrderId(buyerId: string, orderId: string): Promise<PaymentResponse[]>;
 }
 

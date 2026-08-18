@@ -11,7 +11,9 @@ export const createProductRequestSchema = z.object({
 
 export type CreateProductRequest = z.infer<typeof createProductRequestSchema>;
 
-export const updateProductRequestSchema = createProductRequestSchema.partial();
+export const updateProductRequestSchema = createProductRequestSchema.extend({
+  status: productStatusSchema.optional(),
+}).partial();
 
 export type UpdateProductRequest = z.infer<typeof updateProductRequestSchema>;
 
@@ -24,7 +26,9 @@ export type BatchProductsRequest = z.infer<typeof batchProductsRequestSchema>;
 export const productResponseSchema = z.object({
   id: z.string().uuid(),
   sellerId: z.string().uuid(),
+  sellerEmail: z.string().email().optional(),
   categoryId: z.string().uuid(),
+  categoryTitle: z.string().min(1).optional(),
   title: z.string().min(1).max(200),
   description: z.string().max(5000).nullable(),
   price: z.number().int().positive(),

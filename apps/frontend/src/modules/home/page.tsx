@@ -2,48 +2,13 @@
 
 import Link from 'next/link';
 import { Button } from '@/shared/ui/button';
-import { useAppDispatch, useAppSelector } from '@/shared/hooks';
-import { logout as logoutAction } from '@/modules/auth/userSlice';
-import { clearTokens } from '@/modules/auth/auth';
-import { toast } from '@/shared/ui/toast';
+import { useAppSelector } from '@/shared/hooks';
 
 export function HomePage() {
-  const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.user.user);
-
-  const handleLogout = () => {
-    clearTokens();
-    dispatch(logoutAction());
-    toast.success('Logged out successfully');
-  };
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-xl font-bold">
-            Marketplace
-          </Link>
-          <nav className="flex items-center gap-4">
-            {user ? (
-              <>
-                <span className="text-sm text-muted-foreground">{user.email}</span>
-                <Button variant="secondary" onClick={handleLogout}>Log out</Button>
-              </>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="secondary">Sign in</Button>
-                </Link>
-                <Link href="/register">
-                  <Button>Get started</Button>
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
-
       <main>
         <section className="grid place-items-center px-8 py-24">
           <div className="max-w-2xl space-y-6 text-center">

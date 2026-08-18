@@ -11,11 +11,10 @@ import { CatalogModule } from '@modules/catalog/catalog.module';
   imports: [RedisModule, CatalogModule],
   providers: [
     CartService,
-    CartConsumer,
     RedisCartRepository,
     { provide: CART_REPOSITORY, useClass: RedisCartRepository },
   ],
-  controllers: [CartController],
+  controllers: [CartController, CartConsumer],
   exports: [CartService],
 })
 export class CartModule {}

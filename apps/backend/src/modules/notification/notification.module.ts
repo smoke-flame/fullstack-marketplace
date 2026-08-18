@@ -12,13 +12,12 @@ import { NotificationSendTemplate } from './templates/notification-send.template
   imports: [RabbitmqModule],
   providers: [
     NotificationService,
-    NotificationConsumer,
     UserCreatedTemplate,
     OrderCompletedTemplate,
     OrderCancelledTemplate,
     NotificationSendTemplate,
   ],
-  controllers: [DlqController],
+  controllers: [DlqController, NotificationConsumer],
   exports: [NotificationService],
 })
 export class NotificationModule {}

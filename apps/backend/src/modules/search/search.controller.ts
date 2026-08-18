@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, UsePipes } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { Public } from '@modules/common/decorators/public.decorator';
 import { Internal as InternalDecorator } from '@modules/common/decorators/internal.decorator';
 import type { SearchRequest, SearchResponse } from '@marketplace/contracts/api/search/search';
+import { searchRequestSchema } from '@marketplace/contracts/api/search/search';
+import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
+import { RateLimitGroup } from '@modules/gateway/decorators/rate-limit-group.decorator';
 
 type SearchQuery = SearchRequest;
 
@@ -12,6 +15,8 @@ export class SearchController {
 
   @Get('search')
   @Public()
+  @RateLimitGroup('catalog')
+  @UsePipes(new ZodValidationPipe(searchRequestSchema))
   async search(@Query() query: SearchQuery): Promise<SearchResponse> {
     return this.searchService.search(query);
   }

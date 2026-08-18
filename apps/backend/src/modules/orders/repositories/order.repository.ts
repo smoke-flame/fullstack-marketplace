@@ -12,7 +12,13 @@ export interface OrderEntity {
 }
 
 export interface OrderRepository {
-  create(data: { buyerId: string; items: OrderItem[]; totalAmount: number }): Promise<OrderEntity>;
+  create(data: {
+    id: string;
+    buyerId: string;
+    items: OrderItem[];
+    totalAmount: number;
+    outbox: { aggregateType: string; eventType: string; payload: string };
+  }): Promise<OrderEntity>;
   findById(id: string): Promise<OrderEntity | null>;
   findByBuyerId(buyerId: string): Promise<OrderEntity[]>;
   updateStatus(id: string, status: OrderStatus, reason?: string | null): Promise<OrderEntity>;

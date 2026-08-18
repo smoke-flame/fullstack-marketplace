@@ -9,14 +9,18 @@ import { Label } from '@/shared/ui/label';
 import { toast } from '@/shared/ui/toast';
 import type { CartItem } from '@marketplace/contracts/api/cart/cart';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function CartPage() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) => state.cart.items);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  const { loading } = useAsync(getCart, []);
+  const { data: cart, loading } = useAsync(getCart, []);
+
+  useEffect(() => {
+    if (cart) dispatch(setCart(cart.items));
+  }, [cart, dispatch]);
 
   const handleQtyChange = async (item: CartItem, qty: number) => {
     setUpdating(item.productId);
@@ -50,7 +54,7 @@ export function CartPage() {
     }
   };
 
-  const total = items.reduce((sum, item) => sum + item.snapshot.price * item.qty, 0);
+  const total = items.reduce((sum, item) => sum + (item.currentPrice ?? item.snapshot.price) * item.qty, 0);
 
   if (loading) {
     return <div className="mx-auto max-w-4xl px-6 py-12">Loading cart...</div>;
@@ -68,7 +72,7 @@ export function CartPage() {
       {items.length === 0 ? (
         <div className="mt-12 text-center">
           <p className="text-muted-foreground">Your cart is empty.</p>
-           <Link href="/products"><Button className="mt-4">Browse products</Button></Link>
+          <Link href="/search"><Button className="mt-4">Browse products</Button></Link>
         </div>
       ) : (
         <div className="mt-8 space-y-4">
@@ -76,8 +80,19 @@ export function CartPage() {
             <div key={item.productId} className="rounded-lg border p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-semibold">{item.snapshot.title}</h3>
-                  <p className="text-sm text-muted-foreground">Price: ${item.snapshot.price}</p>
+                  <h3 className="font-semibold">
+                    <Link href={`/products/${item.productId}`} className="hover:text-primary hover:underline">
+                      {item.snapshot.title}
+                    </Link>
+                  </h3>
+                  {item.priceChanged && item.currentPrice ? (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground line-through">${item.snapshot.price}</span>
+                      <span className="ml-2 font-medium text-primary">${item.currentPrice} now</span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Price: ${item.snapshot.price}</p>
+                  )}
                   {item.priceChanged && (
                     <p className="text-sm text-orange-600">Price has changed since added</p>
                   )}
@@ -91,14 +106,14 @@ export function CartPage() {
                     <Input
                       id={`qty-${item.productId}`}
                       type="number"
-                      min={1}
+                      min={0}
                       max={99}
                       className="w-16"
                       value={item.qty}
                       disabled={updating === item.productId}
                       onChange={(e) => {
                         const val = parseInt(e.target.value, 10);
-                        if (val >= 1 && val <= 99) {
+                        if (val >= 0 && val <= 99) {
                           handleQtyChange(item, val);
                         }
                       }}
@@ -121,7 +136,11 @@ export function CartPage() {
             <span className="text-lg font-bold">${total}</span>
           </div>
           <div className="flex justify-end">
-             <Link href="/orders"><Button size="lg">Proceed to checkout</Button></Link>
+            {items.some((item) => item.unavailable) ? (
+              <Button size="lg" disabled>Remove unavailable items to checkout</Button>
+            ) : (
+              <Link href="/checkout"><Button size="lg">Proceed to checkout</Button></Link>
+            )}
           </div>
         </div>
       )}

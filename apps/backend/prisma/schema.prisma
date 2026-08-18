@@ -138,6 +138,16 @@ model Outbox {
   @@index([publishedAt])
 }
 
+model ProcessedEvent {
+  consumer    String
+  eventId     String
+  eventType   String
+  processedAt DateTime @default(now())
+
+  @@id([consumer, eventId])
+  @@index([processedAt])
+}
+
 model Stock {
   productId String   @id
   onHand    Int      @default(0)
@@ -159,6 +169,7 @@ model Reservation {
 
   stock Stock @relation(fields: [productId], references: [productId], onDelete: Cascade)
 
+  @@unique([sagaId, productId])
   @@index([sagaId])
   @@index([productId])
   @@index([expiresAt])
@@ -174,9 +185,20 @@ model Payment {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  @@index([orderId])
+  @@unique([orderId])
   @@index([buyerId])
   @@index([status])
+}
+
+model SagaState {
+  orderId       String   @id
+  correlationId String
+  step          String
+  timeoutAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([timeoutAt])
 }
 
 model Review {

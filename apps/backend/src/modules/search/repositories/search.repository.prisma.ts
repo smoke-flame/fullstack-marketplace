@@ -54,13 +54,21 @@ export class PrismaSearchRepository implements SearchRepository {
     cursor?: string;
     limit: number;
   }): Promise<{ items: SearchDocumentEntity[]; nextCursor?: string }> {
+    // Query-string values are strings at runtime. Normalize numeric filters at
+    // the repository boundary so Prisma always receives numbers.
+    const parsedLimit = Number(filters.limit);
+    const limit = Number.isInteger(parsedLimit) && parsedLimit > 0
+      ? Math.min(parsedLimit, 100)
+      : 20;
+    const priceMin = filters.priceMin === undefined ? undefined : Number(filters.priceMin);
+    const priceMax = filters.priceMax === undefined ? undefined : Number(filters.priceMax);
     const where: Record<string, unknown> = { status: 'ACTIVE' };
     if (filters.categoryId) where.categoryId = filters.categoryId;
     if (filters.sellerId) where.sellerId = filters.sellerId;
-    if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
+    if (priceMin !== undefined || priceMax !== undefined) {
       where.price = {};
-      if (filters.priceMin !== undefined) (where.price as Record<string, number>).gte = filters.priceMin;
-      if (filters.priceMax !== undefined) (where.price as Record<string, number>).lte = filters.priceMax;
+      if (priceMin !== undefined) (where.price as Record<string, number>).gte = priceMin;
+      if (priceMax !== undefined) (where.price as Record<string, number>).lte = priceMax;
     }
     if (filters.q) {
       where.OR = [
@@ -72,15 +80,21 @@ export class PrismaSearchRepository implements SearchRepository {
     const items = await this.prisma.searchDocument.findMany({
       where,
       ...(filters.cursor ? { skip: 1, cursor: { id: filters.cursor } } : {}),
-      take: filters.limit + 1,
+      take: limit + 1,
       orderBy: { occurredAt: 'desc' },
     });
 
     let nextCursor: string | undefined;
-    if (items.length > filters.limit) {
+    if (items.length > limit) {
       const last = items.pop();
       nextCursor = last!.id;
     }
+    const [categories, sellers] = await Promise.all([
+      this.prisma.category.findMany({ where: { id: { in: items.map((item) => item.categoryId) } }, select: { id: true, title: true } }),
+      this.prisma.user.findMany({ where: { id: { in: items.map((item) => item.sellerId) } }, select: { id: true, email: true } }),
+    ]);
+    const categoryTitles = new Map(categories.map((category) => [category.id, category.title]));
+    const sellerEmails = new Map(sellers.map((seller) => [seller.id, seller.email]));
     return {
       items: items.map((doc) => ({
         id: doc.id,
@@ -90,6 +104,8 @@ export class PrismaSearchRepository implements SearchRepository {
         price: doc.price,
         categoryId: doc.categoryId,
         sellerId: doc.sellerId,
+        categoryTitle: categoryTitles.get(doc.categoryId),
+        sellerEmail: sellerEmails.get(doc.sellerId),
         status: doc.status as ProductStatus,
         occurredAt: doc.occurredAt,
       })),

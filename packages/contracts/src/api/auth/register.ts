@@ -1,10 +1,12 @@
 import { z } from 'zod';
-import { userRoleSchema, UserRole } from '../../models/user';
+import { UserRole } from '../../models/user';
+
+const registerableRoleSchema = z.enum([UserRole.BUYER, UserRole.SELLER]);
 
 export const registerUserRequestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(72),
-  roles: z.array(userRoleSchema).min(1).default([UserRole.BUYER]),
+  roles: z.array(registerableRoleSchema).min(1).default([UserRole.BUYER]),
 });
 
 export type RegisterUserRequest = z.infer<typeof registerUserRequestSchema>;

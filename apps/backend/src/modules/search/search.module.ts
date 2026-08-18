@@ -11,11 +11,10 @@ import { CatalogModule } from '@modules/catalog/catalog.module';
   imports: [PrismaModule, CatalogModule],
   providers: [
     SearchService,
-    SearchConsumer,
     PrismaSearchRepository,
     { provide: SEARCH_REPOSITORY, useClass: PrismaSearchRepository },
   ],
-  controllers: [SearchController],
+  controllers: [SearchController, SearchConsumer],
   exports: [SearchService],
 })
 export class SearchModule {}

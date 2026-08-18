@@ -40,98 +40,64 @@ export class PrismaInventoryRepository implements InventoryRepository {
   }
 
   async reserveStock(sagaId: string, items: Array<{ productId: string; qty: number }>): Promise<{ success: boolean; shortages?: Array<{ productId: string; requested: number; available: number }> }> {
-    const shortages: Array<{ productId: string; requested: number; available: number }> = [];
+    // The sagaId/productId uniqueness constraint is the durable duplicate
+    // guard.  Keep the duplicate check, stock validation and increments in
+    // one serializable transaction so concurrent commands cannot oversell.
+    const quantities = new Map<string, number>();
+    for (const item of items) quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.qty);
+    const requested = [...quantities].map(([productId, qty]) => ({ productId, qty }));
 
-    for (const item of items) {
-      const stock = await this.prisma.stock.findUnique({ where: { productId: item.productId } });
-      const currentOnHand = stock?.onHand ?? 0;
-      const currentReserved = stock?.reserved ?? 0;
-      const available = currentOnHand - currentReserved;
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        if (await tx.reservation.findFirst({ where: { sagaId } })) return { success: true };
 
-      if (available < item.qty) {
-        shortages.push({
-          productId: item.productId,
-          requested: item.qty,
-          available: Math.max(0, available),
+        const stocks = await tx.stock.findMany({ where: { productId: { in: requested.map((item) => item.productId) } } });
+        const stockByProduct = new Map(stocks.map((stock) => [stock.productId, stock]));
+        const shortages = requested.flatMap((item) => {
+          const stock = stockByProduct.get(item.productId);
+          const available = (stock?.onHand ?? 0) - (stock?.reserved ?? 0);
+          return available < item.qty ? [{ productId: item.productId, requested: item.qty, available: Math.max(0, available) }] : [];
         });
-      }
+        if (shortages.length) return { success: false, shortages };
+
+        for (const item of requested) {
+          await tx.reservation.create({ data: { sagaId, productId: item.productId, qty: item.qty, expiresAt: new Date(Date.now() + 15 * 60 * 1000) } });
+          await tx.stock.update({ where: { productId: item.productId }, data: { reserved: { increment: item.qty } } });
+        }
+        return { success: true };
+      }, { isolationLevel: 'Serializable' });
+    } catch (error: unknown) {
+      // A simultaneous duplicate can lose the unique-index race.  It has
+      // already been reserved by the winning transaction, so it is a no-op.
+      if ((error as { code?: string }).code === 'P2002') return { success: true };
+      throw error;
     }
-
-    if (shortages.length > 0) {
-      return { success: false, shortages };
-    }
-
-    await this.prisma.$transaction(
-      items.map((item) =>
-        this.prisma.reservation.create({
-          data: {
-            sagaId,
-            productId: item.productId,
-            qty: item.qty,
-            expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-          },
-        }),
-      ),
-    );
-
-    await this.prisma.$transaction(
-      items.map((item) =>
-        this.prisma.stock.update({
-          where: { productId: item.productId },
-          data: { reserved: { increment: item.qty } },
-        }),
-      ),
-    );
-
-    return { success: true };
   }
 
   async releaseStock(sagaId: string): Promise<void> {
-    const reservations = await this.prisma.reservation.findMany({ where: { sagaId } });
-
-    if (reservations.length === 0) {
-      return;
-    }
-
-    const productQtys = new Map<string, number>();
-    for (const r of reservations) {
-      productQtys.set(r.productId, (productQtys.get(r.productId) ?? 0) + r.qty);
-    }
-
-    await this.prisma.$transaction(
-      Array.from(productQtys.entries()).map(([productId, qty]) =>
-        this.prisma.stock.update({
-          where: { productId },
-          data: { reserved: { decrement: qty } },
-        }),
-      ),
-    );
-
-    await this.prisma.reservation.deleteMany({ where: { sagaId } });
+    await this.prisma.$transaction(async (tx) => {
+      const reservations = await tx.reservation.findMany({ where: { sagaId } });
+      if (!reservations.length) return;
+      for (const reservation of reservations) {
+        await tx.stock.update({ where: { productId: reservation.productId }, data: { reserved: { decrement: reservation.qty } } });
+      }
+      await tx.reservation.deleteMany({ where: { sagaId } });
+    }, { isolationLevel: 'Serializable' });
   }
 
   async confirmStock(sagaId: string, items: Array<{ productId: string; qty: number }>): Promise<void> {
-    const reservations = await this.prisma.reservation.findMany({ where: { sagaId } });
-    if (reservations.length === 0) return;
-
-    const reservedByProduct = new Map<string, number>();
-    for (const r of reservations) {
-      reservedByProduct.set(r.productId, (reservedByProduct.get(r.productId) ?? 0) + r.qty);
-    }
-
-    await this.prisma.$transaction(
-      items.map((item) =>
-        this.prisma.stock.update({
+    await this.prisma.$transaction(async (tx) => {
+      const reservations = await tx.reservation.findMany({ where: { sagaId } });
+      if (!reservations.length) return;
+      const reservedByProduct = new Map(reservations.map((reservation) => [reservation.productId, reservation.qty]));
+      for (const item of items) {
+        await tx.stock.update({
           where: { productId: item.productId },
-          data: {
-            onHand: { decrement: item.qty },
-            reserved: { decrement: reservedByProduct.get(item.productId) ?? 0 },
-          },
-        }),
-      ),
-    );
-
-    await this.prisma.reservation.deleteMany({ where: { sagaId } });
+          data: { onHand: { decrement: item.qty }, reserved: { decrement: reservedByProduct.get(item.productId) ?? 0 } },
+        });
+      }
+      await tx.reservation.deleteMany({ where: { sagaId } });
+    }, { isolationLevel: 'Serializable' });
   }
 
   async getStocks(productIds: string[]): Promise<Stock[]> {

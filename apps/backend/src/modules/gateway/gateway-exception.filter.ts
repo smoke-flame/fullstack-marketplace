@@ -10,6 +10,7 @@ import { gatewayErrorCodes, type ApiError } from '@marketplace/contracts/errors/
 import type { Response } from 'express';
 import type { GatewayRequest } from './middleware/correlation-id.middleware';
 import { BaseHttpException } from '@modules/common/errors/base-http.exception';
+import { RateLimitExceededException } from '@modules/common/errors/gateway-errors';
 
 @Catch()
 export class GatewayExceptionFilter implements ExceptionFilter {
@@ -25,6 +26,9 @@ export class GatewayExceptionFilter implements ExceptionFilter {
         `Gateway failure [${request.correlationId}]`,
         exception instanceof Error ? exception.stack : String(exception),
       );
+    if (exception instanceof RateLimitExceededException) {
+      response.setHeader('Retry-After', String(exception.retryAfterSeconds));
+    }
     const body: ApiError =
       exception instanceof BaseHttpException
         ? {

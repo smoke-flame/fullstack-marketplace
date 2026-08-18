@@ -20,14 +20,25 @@ export class RedisCartRepository implements CartRepository {
     await this.redis.client.set(this.key(userId), JSON.stringify(cart), 'EX', ttlSeconds);
   }
 
-  async invalidateSnapshot(userId: string, productId: string): Promise<void> {
-    const cart = await this.getCart(userId);
-    if (!cart) return;
-    const item = cart.items.find((i) => i.productId === productId);
-    if (item) {
-      item.priceChanged = true;
-      item.unavailable = true;
-      await this.setCart(userId, cart, 30 * 24 * 60 * 60);
-    }
+  async invalidateProduct(productId: string, currentPrice?: number, unavailable = false): Promise<void> {
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await this.redis.client.scan(cursor, 'MATCH', 'cart:*', 'COUNT', 100);
+      cursor = nextCursor;
+      for (const key of keys) {
+        const raw = await this.redis.client.get(key);
+        if (!raw) continue;
+        const cart = JSON.parse(raw) as import('@marketplace/contracts/api/cart/cart').CartResponse;
+        const item = cart.items.find((entry) => entry.productId === productId);
+        if (!item) continue;
+
+        item.unavailable = unavailable;
+        if (currentPrice !== undefined) {
+          item.currentPrice = currentPrice;
+          item.priceChanged = item.snapshot.price !== currentPrice;
+        }
+        await this.redis.client.set(key, JSON.stringify(cart), 'EX', 30 * 24 * 60 * 60);
+      }
+    } while (cursor !== '0');
   }
 }

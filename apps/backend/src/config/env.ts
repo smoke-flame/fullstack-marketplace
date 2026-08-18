@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { config } from 'dotenv';
+import path from 'node:path';
 
-config({ path: require('path').join(__dirname, '..', '..', '.env') });
+config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -30,9 +31,15 @@ const schema = z.object({
 const result = schema.safeParse(process.env);
 if (!result.success) {
   const details = result.error.issues
-    .map((issue) => `  • ${issue.path.join('.')}: ${issue.message}`)
+    .map((issue) => {
+      const variable = issue.path.join('.') || 'environment';
+      const message = issue.code === 'invalid_type' && issue.received === 'undefined'
+        ? 'is required'
+        : issue.message;
+      return `  - ${variable}: ${message}`;
+    })
     .join('\n');
-  console.error(`\nConfiguration error — update apps/backend/.env:\n${details}\n`);
+  console.error(`\n[config] Startup aborted: invalid environment configuration.\n[config] Fix apps/backend/.env (or the container environment):\n${details}\n`);
   process.exit(1);
 }
 export const env = result.data;

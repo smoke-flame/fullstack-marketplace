@@ -1,38 +1,40 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { OrderRepository, type OrderEntity } from './order.repository';
-import type { OrderStatus, OrderItem } from '@marketplace/contracts/models/order';
+import type { OrderStatus, OrderItem, OrderTimelineEntry } from '@marketplace/contracts/models/order';
 
 @Injectable()
 export class PrismaOrderRepository implements OrderRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: { buyerId: string; items: OrderItem[]; totalAmount: number }): Promise<OrderEntity> {
-    const order = await this.prisma.order.create({
-      data: {
-        buyerId: data.buyerId,
-        totalAmount: data.totalAmount,
-        status: 'PENDING',
-        items: {
-          create: data.items.map((item) => ({
-            productId: item.productId,
-            qty: item.qty,
-            price: item.price,
-          })),
+  async create(data: {
+    id: string;
+    buyerId: string;
+    items: OrderItem[];
+    totalAmount: number;
+    outbox: { aggregateType: string; eventType: string; payload: string };
+  }): Promise<OrderEntity> {
+    const order = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          id: data.id,
+          buyerId: data.buyerId,
+          totalAmount: data.totalAmount,
+          status: 'PENDING',
+          items: { create: data.items.map((item) => ({ productId: item.productId, qty: item.qty, price: item.price })) },
+          timeline: { create: { status: 'PENDING', reason: null } },
         },
-        timeline: {
-          create: {
-            status: 'PENDING',
-            reason: null,
-          },
+        include: { items: true, timeline: { orderBy: { occurredAt: 'asc' } } },
+      });
+      await tx.outbox.create({
+        data: {
+          aggregateType: data.outbox.aggregateType,
+          aggregateId: created.id,
+          eventType: data.outbox.eventType,
+          payload: data.outbox.payload,
         },
-      },
-      include: {
-        items: true,
-        timeline: {
-          orderBy: { occurredAt: 'asc' },
-        },
-      },
+      });
+      return created;
     });
     return this.mapOrder(order);
   }
@@ -139,7 +141,7 @@ export class PrismaOrderRepository implements OrderRepository {
       timeline: order.timeline.map((t) => ({
         status: t.status,
         occurredAt: t.occurredAt,
-        reason: t.reason as any,
+        reason: t.reason as OrderTimelineEntry['reason'],
       })),
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,

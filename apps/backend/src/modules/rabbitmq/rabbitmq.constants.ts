@@ -56,6 +56,11 @@ export const RABBITMQ_NOTIFICATION_SEND_CLIENT = 'NOTIFICATION_SEND_CLIENT';
 
 export const DEFAULT_RABBITMQ_URL = 'amqp://marketplace:change-me-in-production@localhost:5672';
 
+// `noAck: true` is the safe default for client proxies registered in
+// `RabbitmqModule` because NestJS RMQ creates an internal reply consumer for
+// request/reply patterns, and RabbitMQ's direct-reply-to consumer cannot
+// acknowledge manually.  Server-side microservices in `main.ts` pass `false`
+// explicitly so their handlers can ack/nack messages themselves.
 export function createRmqOptions(queue: string, noAck = true) {
   const isDlq = queue === DLQ_NAME;
   return {

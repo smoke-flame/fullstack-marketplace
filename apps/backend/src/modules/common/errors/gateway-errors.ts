@@ -39,8 +39,12 @@ export class RefreshTokenRevokedException extends BaseHttpException {
 }
 
 export class RateLimitExceededException extends BaseHttpException {
-  constructor() {
-    super(gatewayErrorCodes.rateLimitExceeded, 'Rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
+  constructor(public readonly retryAfterSeconds: number) {
+    super(
+      gatewayErrorCodes.rateLimitExceeded,
+      `Rate limit exceeded. Try again in ${retryAfterSeconds} seconds.`,
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
   }
 }
 

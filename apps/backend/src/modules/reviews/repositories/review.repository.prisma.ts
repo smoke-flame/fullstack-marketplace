@@ -70,7 +70,7 @@ export class PrismaReviewRepository implements ReviewRepository {
 
   async upsertProductRating(productId: string): Promise<ProductRating> {
     const result = await this.prisma.$queryRaw<{ productId: string; avg: number; count: number }[]>`
-      SELECT product_id as "productId", ROUND(AVG(rating)::numeric, 1) as "avg", COUNT(*) as "count"
+      SELECT "productId" as "productId", ROUND(AVG(rating)::numeric, 1) as "avg", COUNT(*) as "count"
       FROM "Review"
       WHERE "productId" = ${productId}
       GROUP BY "productId"
@@ -86,7 +86,7 @@ export class PrismaReviewRepository implements ReviewRepository {
       return { avg: Number(rating.avgRating), count: rating.reviewCount };
     }
 
-    const avg = Number(row.avg.toFixed(1));
+    const avg = Number(Number(row.avg).toFixed(1));
     const rating = await this.prisma.productRating.upsert({
       where: { productId },
       create: { productId, avgRating: avg, reviewCount: row.count },

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { RabbitMQEvent } from './rabbitmq.event';
 import {
@@ -32,6 +32,7 @@ import { RabbitmqClientNotFoundException } from '@modules/common/errors/rabbitmq
 
 @Injectable()
 export class EventPublisher {
+  private readonly logger = new Logger(EventPublisher.name);
   private readonly clients: ReadonlyMap<string, ClientProxy>;
 
   constructor(
@@ -87,6 +88,28 @@ export class EventPublisher {
       throw new RabbitmqClientNotFoundException(event.eventType);
     }
 
-    await lastValueFrom(client.emit(queueName, event.toJSON()));
+    const envelope = event.toJSON();
+    this.logger.log(`Publishing RabbitMQ event: ${JSON.stringify({
+      eventType: envelope.eventType,
+      eventId: envelope.eventId,
+      correlationId: envelope.correlationId,
+      queue: queueName,
+      payload: envelope.payload,
+    })}`);
+
+    try {
+      await lastValueFrom(client.emit(queueName, envelope));
+    } catch (error) {
+      this.logger.error(
+        `RabbitMQ publish failed: ${JSON.stringify({
+          eventType: envelope.eventType,
+          eventId: envelope.eventId,
+          correlationId: envelope.correlationId,
+          queue: queueName,
+        })}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw error;
+    }
   }
 }

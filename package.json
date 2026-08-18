@@ -9,7 +9,8 @@
     "lint": "pnpm -r lint",
     "format": "prettier --write .",
     "db:generate": "pnpm --filter @marketplace/backend prisma:generate",
-    "db:migrate": "pnpm --filter @marketplace/backend prisma:migrate"
+    "db:migrate": "pnpm --filter @marketplace/backend prisma:migrate",
+    "db:seed": "pnpm --filter @marketplace/backend prisma:seed"
   },
   "devDependencies": { "prettier": "^3.4.2", "typescript": "^5.7.2" }
 }

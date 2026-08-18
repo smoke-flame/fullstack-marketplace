@@ -4,16 +4,20 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { loginUser } from '@/modules/auth/api';
-import { setAccessToken, setRefreshToken } from '@/modules/auth/auth';
+import { getMe, loginUser } from '@/modules/auth/api';
+import { clearTokens, setAccessToken, setRefreshToken } from '@/modules/auth/auth';
+import { logout as logoutAction, setCredentials } from '@/modules/auth/userSlice';
+import { useAppDispatch } from '@/shared/hooks';
 import { toast } from '@/shared/ui/toast';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { loginUserRequestSchema, type LoginUserRequest } from '@marketplace/contracts/api/auth/login';
+import { GuestOnly } from '../guest-only';
 
 export function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const {
     register,
     handleSubmit,
@@ -28,15 +32,24 @@ export function LoginPage() {
       const response = await loginUser(data);
       setAccessToken(response.accessToken);
       setRefreshToken(response.refreshToken);
+      const user = await getMe();
+      dispatch(setCredentials({
+        user,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+      }));
       toast.success('Welcome back!');
       router.push('/search');
     } catch {
+      clearTokens();
+      dispatch(logoutAction());
       // error handled by interceptor toast
     }
   };
 
   return (
-    <div className="grid min-h-screen place-items-center p-8">
+    <GuestOnly>
+      <div className="grid min-h-screen place-items-center p-8">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Sign in</h1>
@@ -71,6 +84,7 @@ export function LoginPage() {
           Don&apos;t have an account? <Link href="/register" className="text-primary underline">Sign up</Link>
         </p>
       </div>
-    </div>
+      </div>
+    </GuestOnly>
   );
 }

@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { OutboxRepository, OUTBOX_REPOSITORY } from './outbox.repository';
 import { EventPublisher } from '@modules/rabbitmq/event-publisher';
 import { RabbitMQEvent } from '@modules/rabbitmq/rabbitmq.event';
@@ -20,37 +20,48 @@ const EVENT_CONSTRUCTORS: Record<string, new (payload: unknown, correlationId: s
 };
 
 @Injectable()
-export class OutboxPublisherService {
+export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(OutboxPublisherService.name);
   private readonly batchSize = 50;
+  private timer?: NodeJS.Timeout;
+  private publishing?: Promise<void>;
 
   constructor(
     @Inject(OUTBOX_REPOSITORY) private readonly outbox: OutboxRepository,
     private readonly publisher: EventPublisher,
-  ) {
-    this.start();
-  }
+  ) {}
 
-  private start() {
-    setInterval(() => {
-      this.publishPending().catch((error) => {
-        this.logger.error(`Outbox publisher error: ${error}`);
-      });
+  onModuleInit() {
+    this.publishPending().catch((error) => this.logger.error(`Outbox publisher error: ${error}`));
+    this.timer = setInterval(() => {
+      this.publishPending().catch((error) => this.logger.error(`Outbox publisher error: ${error}`));
     }, 5000);
   }
 
+  async onModuleDestroy() {
+    if (this.timer) clearInterval(this.timer);
+    await this.publishing;
+  }
+
   async publishPending() {
+    if (this.publishing) return this.publishing;
+    this.publishing = this.publishBatch().finally(() => {
+      this.publishing = undefined;
+    });
+    return this.publishing;
+  }
+
+  private async publishBatch() {
     const events = await this.outbox.findUnpublished(this.batchSize);
     for (const event of events) {
       try {
         const envelope = JSON.parse(event.payload);
         const ctor = EVENT_CONSTRUCTORS[envelope.eventType];
-        if (ctor) {
-          const evt = RabbitMQEvent.fromJSON(envelope, ctor);
-          await this.publisher.publish(evt);
-        } else {
-          this.logger.warn(`No event constructor registered for ${envelope.eventType}`);
-        }
+        if (!ctor) throw new Error(`No event constructor registered for ${envelope.eventType}`);
+        // The complete envelope, including eventId, is stored in the outbox.
+        // Rebuilding it from JSON preserves the same identity after a restart.
+        const evt = RabbitMQEvent.fromJSON(envelope, ctor);
+        await this.publisher.publish(evt);
         await this.outbox.markPublished(event.id);
       } catch (error) {
         this.logger.error(`Failed to publish outbox event ${event.id}: ${error}`);

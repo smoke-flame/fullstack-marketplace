@@ -12,6 +12,7 @@ export const cartItemSchema = z.object({
   productId: z.string().uuid(),
   qty: z.number().int().positive().max(99),
   snapshot: cartItemSnapshotSchema,
+  currentPrice: z.number().int().positive().optional(),
   priceChanged: z.boolean(),
   unavailable: z.boolean(),
 });

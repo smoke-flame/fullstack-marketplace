@@ -1,7 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ReviewRepository, REVIEW_REPOSITORY } from './repositories/review.repository';
-import { ReviewCreatedEvent, ReviewDeletedEvent } from './events';
-import { EventPublisher } from '@modules/rabbitmq/event-publisher';
 import { ReviewAlreadyExistsException, ReviewNotFoundException, ReviewForbiddenException, PurchaseNotFoundException } from '@modules/common/errors/review-errors';
 import type { ReviewResponse, ProductRating, CreateReviewRequest } from '@marketplace/contracts/models/review/review';
 
@@ -9,7 +7,6 @@ import type { ReviewResponse, ProductRating, CreateReviewRequest } from '@market
 export class ReviewsService {
   constructor(
     @Inject(REVIEW_REPOSITORY) private readonly reviewRepo: ReviewRepository,
-    private readonly publisher: EventPublisher,
   ) {}
 
   async createReview(productId: string, buyerId: string, data: CreateReviewRequest): Promise<ReviewResponse> {
@@ -31,13 +28,6 @@ export class ReviewsService {
     });
 
     await this.reviewRepo.upsertProductRating(productId);
-
-    await this.publisher.publish(new ReviewCreatedEvent({
-      reviewId: review.id,
-      productId,
-      buyerId,
-      rating: review.rating,
-    }, ''));
 
     return review;
   }
@@ -66,10 +56,6 @@ export class ReviewsService {
     await this.reviewRepo.delete(reviewId, buyerId);
     await this.reviewRepo.upsertProductRating(review.productId);
 
-    await this.publisher.publish(new ReviewDeletedEvent({
-      reviewId,
-      productId: review.productId,
-    }, ''));
   }
 
   async onOrderCompleted(productId: string, buyerId: string, orderId: string): Promise<void> {

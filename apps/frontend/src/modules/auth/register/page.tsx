@@ -12,6 +12,7 @@ import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { UserRole } from '@marketplace/contracts/models/user';
+import { GuestOnly } from '../guest-only';
 
 const registerFormSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -43,7 +44,7 @@ export function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      const roles: UserRole[] = [UserRole.BUYER, ...(isSeller ? [UserRole.SELLER] : [])];
+      const roles = [UserRole.BUYER, ...(isSeller ? [UserRole.SELLER] : [])];
       await registerUser({ email: data.email, password: data.password, roles });
       toast.success('Account created! Please sign in.');
       router.push('/login');
@@ -53,7 +54,8 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="grid min-h-screen place-items-center p-8">
+    <GuestOnly>
+      <div className="grid min-h-screen place-items-center p-8">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Create an account</h1>
@@ -102,6 +104,7 @@ export function RegisterPage() {
           Already have an account? <Link href="/login" className="text-primary underline">Sign in</Link>
         </p>
       </div>
-    </div>
+      </div>
+    </GuestOnly>
   );
 }

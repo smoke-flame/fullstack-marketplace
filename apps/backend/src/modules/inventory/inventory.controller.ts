@@ -1,8 +1,12 @@
-import { Controller, Get, Param, Put, Query, UseGuards, Body, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Param, Put, Query, Req, UseGuards, UsePipes } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
+import { SellerGuard } from '@modules/catalog/guards/seller.guard';
+import { CatalogService } from '@modules/catalog/catalog.service';
+import { ProductNotFoundException, ProductForbiddenException } from '@modules/common/errors/catalog-errors';
 import { Internal } from '@modules/common/decorators/internal.decorator';
 import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
+import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
 import { setStockRequestSchema, type SetStockRequest, batchStockRequestSchema, type BatchStockResponse } from '@marketplace/contracts/api/inventory/inventory';
 
 type SetStockBody = SetStockRequest;
@@ -10,14 +14,22 @@ type BatchQuery = { ids: string[] };
 
 @Controller()
 export class InventoryController {
-  constructor(private readonly inventoryService: InventoryService) {}
+  constructor(
+    private readonly inventoryService: InventoryService,
+    private readonly catalogService: CatalogService,
+  ) {}
 
   @Put('stock/:productId')
-  @UseGuards(JwtGatewayGuard)
-  @UsePipes(new ZodValidationPipe(setStockRequestSchema))
-  async setStock(@Param('productId') productId: string, @Body() body: SetStockBody): Promise<any> {
-    const product = await this.inventoryService.setStock(productId, body.onHand);
-    return product;
+  @UseGuards(JwtGatewayGuard, SellerGuard)
+  async setStock(
+    @Param('productId') productId: string,
+    @Body(new ZodValidationPipe(setStockRequestSchema)) body: SetStockBody,
+    @Req() request: GatewayRequest,
+  ): Promise<any> {
+    const catalogProduct = await this.catalogService.findProductById(productId);
+    if (!catalogProduct) throw new ProductNotFoundException();
+    if (catalogProduct.sellerId !== request.user!.id) throw new ProductForbiddenException();
+    return this.inventoryService.setStock(productId, body.onHand);
   }
 
   @Get('stock/:productId')

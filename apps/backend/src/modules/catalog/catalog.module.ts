@@ -5,9 +5,10 @@ import { PrismaCatalogRepository } from './repositories/catalog.repository.prism
 import { CATEGORY_REPOSITORY, PRODUCT_REPOSITORY } from './repositories/catalog.repository';
 import { PrismaModule } from '@modules/prisma/prisma.module';
 import { RabbitmqModule } from '@modules/rabbitmq/rabbitmq.module';
+import { UsersModule } from '@modules/users/user.module';
 
 @Module({
-  imports: [PrismaModule, RabbitmqModule],
+  imports: [PrismaModule, RabbitmqModule, UsersModule],
   providers: [
     CatalogService,
     PrismaCatalogRepository,

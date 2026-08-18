@@ -29,7 +29,10 @@ export class RateLimitGuard implements CanActivate {
     const attempts = await this.redis.execute(() => this.redis.client.incr(key));
     if (attempts === 1)
       await this.redis.execute(() => this.redis.client.expire(key, windowSeconds));
-    if (attempts > max) throw new RateLimitExceededException();
+    if (attempts > max) {
+      const ttl = await this.redis.execute(() => this.redis.client.ttl(key));
+      throw new RateLimitExceededException(ttl > 0 ? ttl : windowSeconds);
+    }
     return true;
   }
 }

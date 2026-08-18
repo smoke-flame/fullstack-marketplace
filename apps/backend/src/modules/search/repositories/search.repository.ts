@@ -6,6 +6,8 @@ export interface SearchDocumentEntity {
   price: number;
   categoryId: string;
   sellerId: string;
+  categoryTitle?: string;
+  sellerEmail?: string;
   status: 'ACTIVE' | 'ARCHIVED';
   occurredAt: Date;
 }

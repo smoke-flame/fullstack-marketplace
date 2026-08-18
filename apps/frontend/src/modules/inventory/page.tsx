@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/shared/ui/button';
+import Link from 'next/link';
 import { Input } from '@/shared/ui/input';
 import { toast } from '@/shared/ui/toast';
 import { getStock, setStock } from '@/modules/inventory/api';
@@ -11,14 +12,18 @@ import { getAllProducts } from '@/modules/catalog/api';
 import type { StockResponse } from '@marketplace/contracts/api/inventory/inventory';
 import type { ProductResponse } from '@marketplace/contracts/api/catalog/products';
 import { setStockRequestSchema, type SetStockRequest } from '@marketplace/contracts/api/inventory/inventory';
-import { useAsync } from '@/shared/hooks';
+import { useAppSelector, useAsync } from '@/shared/hooks';
 
 export function InventoryPage() {
   const [products, setProducts] = useState<ProductResponse[]>([]);
   const [stocks, setStocks] = useState<Map<string, StockResponse>>(new Map());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const userId = useAppSelector((state) => state.user.user?.id);
 
-  const productsResult = useAsync(getAllProducts, []);
+  const productsResult = useAsync(
+    (signal) => userId ? getAllProducts(signal, userId) : Promise.resolve([]),
+    [userId],
+  );
 
   useEffect(() => {
     if (!productsResult.data) return;
@@ -87,7 +92,7 @@ export function InventoryPage() {
                 <tr key={product.id} className="border-b last:border-0">
                   <td className="py-4">
                     <div>
-                      <p className="font-medium">{product.title}</p>
+                      <Link href={`/products/${product.id}`} className="font-medium hover:text-primary hover:underline">{product.title}</Link>
                       <p className="text-xs text-muted-foreground">{product.id}</p>
                     </div>
                   </td>

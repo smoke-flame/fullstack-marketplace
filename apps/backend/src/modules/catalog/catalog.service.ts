@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { USER_REPOSITORY, UserRepository } from '@modules/users/user.repository';
 import { CategoryRepository, ProductRepository, CATEGORY_REPOSITORY, PRODUCT_REPOSITORY, type CategoryEntity, type ProductEntity } from './repositories/catalog.repository';
 import { CategoryNotFoundException, CategoryDepthExceededException, ProductNotFoundException, ProductForbiddenException } from '@modules/common/errors/catalog-errors';
 import { type CreateCategoryRequest } from '@marketplace/contracts/api/catalog/categories';
@@ -10,6 +11,7 @@ export class CatalogService {
   constructor(
     @Inject(CATEGORY_REPOSITORY) private readonly categoryRepo: CategoryRepository,
     @Inject(PRODUCT_REPOSITORY) private readonly productRepo: ProductRepository,
+    @Inject(USER_REPOSITORY) private readonly userRepo: UserRepository,
   ) {}
 
   async createCategory(data: CreateCategoryRequest): Promise<{ id: string; parentId: string | null; title: string }> {
@@ -34,8 +36,8 @@ export class CatalogService {
     return tree[0];
   }
 
-  async findAllCategories() {
-    const categories = await this.categoryRepo.findAllCategories();
+  async findAllCategories(query?: string) {
+    const categories = await this.categoryRepo.findAllCategories(query);
     return this.categoryRepo.buildTree(categories);
   }
 
@@ -55,6 +57,20 @@ export class CatalogService {
 
   async findProductById(id: string): Promise<ProductEntity | null> {
     return this.productRepo.findProductById(id);
+  }
+
+  async findProductDetails(id: string) {
+    const product = await this.productRepo.findProductById(id);
+    if (!product) return null;
+    const [category, seller] = await Promise.all([
+      this.categoryRepo.findCategoryById(product.categoryId),
+      this.userRepo.findById(product.sellerId),
+    ]);
+    return {
+      ...product,
+      categoryTitle: category?.title,
+      sellerEmail: seller?.email,
+    };
   }
 
   async findProductsByIds(ids: string[]): Promise<ProductEntity[]> {
@@ -90,6 +106,7 @@ export class CatalogService {
       description: data.description,
       price: data.price,
       categoryId: data.categoryId,
+      status: data.status,
     });
   }
 

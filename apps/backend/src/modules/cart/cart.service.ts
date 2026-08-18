@@ -23,10 +23,10 @@ export class CartService {
     const items = cart.items.map((item) => {
       const product = productMap.get(item.productId);
       if (!product || product.status === 'ARCHIVED') {
-        return { ...item, priceChanged: false, unavailable: true };
+        return { ...item, currentPrice: undefined, priceChanged: false, unavailable: true };
       }
       const priceChanged = product.price !== item.snapshot.price;
-      return { ...item, priceChanged, unavailable: false };
+      return { ...item, currentPrice: product.price, priceChanged, unavailable: false };
     });
 
     return { items };
@@ -40,7 +40,7 @@ export class CartService {
     if (qty === 0) {
       cart.items = cart.items.filter((i) => i.productId !== productId);
       await this.repo.setCart(userId, cart, this.ttlSeconds);
-      return { items: cart.items };
+      return this.getCart(userId);
     }
     if (qty > 99) {
       throw new CartLimitExceededException();
@@ -64,7 +64,7 @@ export class CartService {
       });
     }
     await this.repo.setCart(userId, cart, this.ttlSeconds);
-    return { items: cart.items };
+    return this.getCart(userId);
   }
 
   async removeItem(userId: string, productId: string) {
@@ -80,7 +80,7 @@ export class CartService {
     return { items: [] };
   }
 
-  async invalidateSnapshotByProductId(): Promise<void> {
-    // In Redis we can't scan all carts efficiently; snapshot invalidation is done lazily on GET /cart.
+  async invalidateSnapshotByProductId(productId: string, currentPrice?: number, unavailable = false): Promise<void> {
+    await this.repo.invalidateProduct(productId, currentPrice, unavailable);
   }
 }

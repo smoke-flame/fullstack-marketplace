@@ -8,6 +8,7 @@ import { EventPublisher } from '@modules/rabbitmq/event-publisher';
 import { ProductCreatedEvent } from './events/product.created.event';
 import { ProductUpdatedEvent } from './events/product.updated.event';
 import { ProductArchivedEvent } from './events/product.archived.event';
+import { SellerGuard } from './guards/seller.guard';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
 import { ProductNotFoundException } from '@modules/common/errors/catalog-errors';
 import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
@@ -38,7 +39,7 @@ export class CatalogController {
   ) {}
 
   @Post('categories')
-  @UseGuards(JwtGatewayGuard)
+  @UseGuards(JwtGatewayGuard, SellerGuard)
   @UsePipes(new ZodValidationPipe(createCategoryRequestSchema))
   async createCategory(@Body() body: CreateCategoryBody): Promise<CategoryResponse> {
     const category = await this.catalogService.createCategory(body);
@@ -51,13 +52,13 @@ export class CatalogController {
 
   @Get('categories')
   @Public()
-  async findAllCategories() {
-    return this.catalogService.findAllCategories();
+  async findAllCategories(@Query('q') query?: string) {
+    return this.catalogService.findAllCategories(query?.trim() || undefined);
   }
 
   @Post('products')
   @RateLimitGroup('catalog')
-  @UseGuards(JwtGatewayGuard)
+  @UseGuards(JwtGatewayGuard, SellerGuard)
   @UsePipes(new ZodValidationPipe(createProductRequestSchema))
   async createProduct(@Body() body: CreateProductRequest, @Req() request: GatewayRequest): Promise<ProductResponse> {
     const product = await this.catalogService.createProduct(request.user!.id, body);
@@ -76,7 +77,7 @@ export class CatalogController {
   @Get('products/:id')
   @Public()
   async findProductById(@Param('id') id: string): Promise<ProductResponse> {
-    const product = await this.catalogService.findProductById(id);
+    const product = await this.catalogService.findProductDetails(id);
     if (!product) {
       throw new ProductNotFoundException();
     }
@@ -106,8 +107,11 @@ export class CatalogController {
   @Patch('products/:id')
   @RateLimitGroup('catalog')
   @UseGuards(JwtGatewayGuard)
-  @UsePipes(new ZodValidationPipe(updateProductRequestSchema))
-  async updateProduct(@Param('id') id: string, @Body() body: UpdateProductRequest, @Req() request: GatewayRequest): Promise<ProductResponse> {
+  async updateProduct(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(updateProductRequestSchema)) body: UpdateProductRequest,
+    @Req() request: GatewayRequest,
+  ): Promise<ProductResponse> {
     const product = await this.catalogService.updateProduct(id, request.user!.id, body);
     const payload: ProductUpdatedPayload = {
       productId: product.id,
@@ -148,11 +152,15 @@ export class CatalogController {
     status: ProductStatus;
     createdAt: Date;
     updatedAt: Date;
+    categoryTitle?: string;
+    sellerEmail?: string;
   }): ProductResponse {
     return {
       id: product.id,
       sellerId: product.sellerId,
+      ...(product.sellerEmail ? { sellerEmail: product.sellerEmail } : {}),
       categoryId: product.categoryId,
+      ...(product.categoryTitle ? { categoryTitle: product.categoryTitle } : {}),
       title: product.title,
       description: product.description,
       price: product.price,

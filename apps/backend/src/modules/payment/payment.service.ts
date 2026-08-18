@@ -50,12 +50,17 @@ export class PaymentService {
       }
     }
 
-    const payment = await this.paymentRepo.create({
+    const created = await this.paymentRepo.create({
       orderId: sagaId,
       buyerId,
       amount,
       status: 'PROCESSING',
     });
+    if (!created.created) {
+      this.logger.log(`Payment already exists for saga ${sagaId}; concurrent charge is a no-op`);
+      return;
+    }
+    const payment = created.payment;
 
     const delay = this.randomDelay();
     this.logger.log(`Payment ${payment.id} for saga ${sagaId} processing, will complete in ${delay}ms`);
@@ -70,7 +75,7 @@ export class PaymentService {
 
         if (Math.random() < this.failureProbability) {
           const reason = Math.random() < 0.5 ? 'INSUFFICIENT_FUNDS' : 'PROVIDER_ERROR';
-          await this.paymentRepo.updateStatus(payment.id, 'FAILED', reason);
+          if (!await this.paymentRepo.transitionStatus(payment.id, 'PROCESSING', 'FAILED', reason)) return;
           this.logger.warn(`Payment ${payment.id} failed for saga ${sagaId}: ${reason}`);
           await this.publisher.publish(new PaymentFailedEvent({
             sagaId,
@@ -78,7 +83,7 @@ export class PaymentService {
             reason,
           } as PaymentFailedPayload, correlationId));
         } else {
-          await this.paymentRepo.updateStatus(payment.id, 'SUCCEEDED');
+          if (!await this.paymentRepo.transitionStatus(payment.id, 'PROCESSING', 'SUCCEEDED')) return;
           this.logger.log(`Payment ${payment.id} succeeded for saga ${sagaId}`);
           await this.publisher.publish(new PaymentSucceededEvent({
             sagaId,
@@ -103,7 +108,7 @@ export class PaymentService {
       return;
     }
 
-    await this.paymentRepo.updateStatus(payment.id, 'REFUNDED');
+    if (!await this.paymentRepo.transitionStatus(payment.id, 'SUCCEEDED', 'REFUNDED')) return;
     this.logger.log(`Payment ${payment.id} refunded for saga ${sagaId}`);
     await this.publisher.publish(new PaymentRefundedEvent({
       sagaId,

@@ -20,6 +20,8 @@ export const searchItemSchema = z.object({
   price: z.number().int().positive(),
   categoryId: z.string().uuid(),
   sellerId: z.string().uuid(),
+  categoryTitle: z.string().min(1),
+  sellerEmail: z.string().min(1),
 });
 
 export type SearchItem = z.infer<typeof searchItemSchema>;

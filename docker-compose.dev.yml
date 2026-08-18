@@ -1,0 +1,31 @@
+services:
+  api:
+    working_dir: /app
+    command: >-
+      sh -c "pnpm --filter @marketplace/contracts build
+      && pnpm --dir apps/backend exec prisma generate
+      && pnpm --dir apps/backend exec prisma migrate deploy
+      && pnpm --dir apps/backend dev"
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+      - /app/packages/contracts/node_modules
+
+  web:
+    working_dir: /app
+    command: >-
+      sh -c "pnpm --filter @marketplace/contracts build
+      && pnpm --dir apps/frontend dev"
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/frontend/node_modules
+      - /app/packages/contracts/node_modules
+      - /app/apps/frontend/.next

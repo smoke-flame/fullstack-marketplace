@@ -6,6 +6,7 @@ interface UserState {
   accessToken: string | null;
   refreshToken: string | null;
   loading: boolean;
+  initialized: boolean;
   error: string | null;
 }
 
@@ -14,6 +15,7 @@ const initialState: UserState = {
   accessToken: null,
   refreshToken: null,
   loading: false,
+  initialized: false,
   error: null,
 };
 
@@ -44,12 +46,15 @@ const userSlice = createSlice({
     setLoading(state, action: PayloadAction<boolean>) {
       state.loading = action.payload;
     },
+    setInitialized(state, action: PayloadAction<boolean>) {
+      state.initialized = action.payload;
+    },
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
     },
   },
 });
 
-export const { setCredentials, updateAccessToken, updateRefreshToken, logout, setLoading, setError } = userSlice.actions;
+export const { setCredentials, updateAccessToken, updateRefreshToken, logout, setLoading, setInitialized, setError } = userSlice.actions;
 
 export default userSlice;

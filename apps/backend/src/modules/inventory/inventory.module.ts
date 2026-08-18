@@ -5,16 +5,16 @@ import { InventoryConsumer } from './inventory.consumer';
 import { PrismaInventoryRepository } from './repositories/inventory.repository.prisma';
 import { INVENTORY_REPOSITORY } from './repositories/inventory.repository';
 import { PrismaModule } from '@modules/prisma/prisma.module';
+import { CatalogModule } from '@modules/catalog/catalog.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, CatalogModule],
   providers: [
     InventoryService,
-    InventoryConsumer,
     PrismaInventoryRepository,
     { provide: INVENTORY_REPOSITORY, useClass: PrismaInventoryRepository },
   ],
-  controllers: [InventoryController],
+  controllers: [InventoryController, InventoryConsumer],
   exports: [InventoryService],
 })
 export class InventoryModule {}

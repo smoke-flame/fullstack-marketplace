@@ -3,41 +3,43 @@
 import { Provider } from 'react-redux';
 import { store } from '@/store';
 import { useAppDispatch } from '@/shared/hooks';
-import { setCredentials } from '@/modules/auth/userSlice';
+import { logout, setCredentials, setInitialized, setLoading } from '@/modules/auth/userSlice';
 import { registerRefreshHandler } from '@/modules/auth/refreshSync';
-import { getAccessToken, getRefreshToken } from '@/modules/auth/auth';
-import { UserRole } from '@marketplace/contracts/models/user';
+import { clearTokens, getAccessToken, getRefreshToken } from '@/modules/auth/auth';
+import { getMe } from '@/modules/auth/api';
 import { useEffect } from 'react';
 
 function ReduxInit({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
+    let active = true;
+    dispatch(setLoading(true));
     const token = getAccessToken();
     const refreshToken = getRefreshToken();
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const rawRoles = Array.isArray(payload.roles) ? payload.roles : [];
-        const roles = rawRoles.filter((r: string): r is UserRole => r === UserRole.BUYER || r === UserRole.SELLER);
-        const user = {
-          id: payload.sub,
-          email: (payload.email || payload.sub || '') as string,
-          roles,
-        };
-        dispatch(setCredentials({ user, accessToken: token, refreshToken: refreshToken || '' }));
-      } catch {
-        // ignore invalid token
-      }
-    }
 
-    registerRefreshHandler((accessToken, refreshToken) => {
-      dispatch(setCredentials({
-        user: store.getState().user.user!,
-        accessToken,
-        refreshToken: refreshToken,
-      }));
+    const initialize = async () => {
+      if (token) {
+        try {
+          const user = await getMe();
+          if (active) dispatch(setCredentials({ user, accessToken: getAccessToken() ?? token, refreshToken: getRefreshToken() ?? refreshToken ?? '' }));
+        } catch {
+          clearTokens();
+          if (active) dispatch(logout());
+        }
+      }
+      if (active) {
+        dispatch(setLoading(false));
+        dispatch(setInitialized(true));
+      }
+    };
+
+    void initialize();
+    registerRefreshHandler((accessToken, nextRefreshToken) => {
+      const currentUser = store.getState().user.user;
+      if (currentUser) dispatch(setCredentials({ user: currentUser, accessToken, refreshToken: nextRefreshToken }));
     });
+    return () => { active = false; };
   }, [dispatch]);
 
   return children;

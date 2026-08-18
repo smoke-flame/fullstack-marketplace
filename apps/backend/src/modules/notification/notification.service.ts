@@ -12,6 +12,7 @@ import { OrderCompletedEvent } from '../orders/events/order.completed.event';
 import { OrderCancelledEvent } from '../orders/events/order.cancelled.event';
 import type { OrderCancelledPayload } from '@marketplace/contracts/events/order/order-events';
 import { NotificationSendCommand } from '../orders/commands/notification-send.command';
+import { NotificationSentEvent } from './events/notification-sent.event';
 import type { OrderCompletedPayload } from '@marketplace/contracts/events/order/order-events';
 import type { NotificationSendCommand as NotificationSendCommandPayload } from '@marketplace/contracts/events/commands';
 
@@ -48,27 +49,31 @@ export class NotificationService {
     this.baseDelayMs = env.NOTIFICATION_RETRY_BASE_DELAY_MS ?? 1000;
   }
 
-  async sendWelcomeEmail(payload: { userId: string; email: string; roles: string[] }): Promise<void> {
+  async sendWelcomeEmail(payload: { userId: string; email: string; roles: string[] }, correlationId: string): Promise<void> {
     const message = this.userCreatedTemplate.render(payload);
-    await this.sendWithRetry('user.registered', message);
+    await this.sendWithRetry('user.registered', message, correlationId);
   }
 
-  async sendOrderCompleted(payload: { orderId: string; buyerId: string; items: Array<{ productId: string; qty: number }> }): Promise<void> {
+  async sendOrderCompleted(payload: { orderId: string; buyerId: string; items: Array<{ productId: string; qty: number }> }, correlationId: string): Promise<void> {
     const message = this.orderCompletedTemplate.render(payload);
-    await this.sendWithRetry('order.completed', message);
+    await this.sendWithRetry('order.completed', message, correlationId);
   }
 
-  async sendOrderCancelled(payload: { orderId: string; buyerId: string; reason: string }): Promise<void> {
+  async sendOrderCancelled(payload: { orderId: string; buyerId: string; reason: string }, correlationId: string): Promise<void> {
     const message = this.orderCancelledTemplate.render(payload);
-    await this.sendWithRetry('order.cancelled', message);
+    await this.sendWithRetry('order.cancelled', message, correlationId);
   }
 
-  async sendNotificationCommand(payload: { orderId: string; userId: string }): Promise<void> {
+  async sendNotificationCommand(payload: { orderId: string; userId: string }, correlationId: string): Promise<void> {
     const message = this.notificationSendTemplate.render(payload);
-    await this.sendWithRetry('notification.send', message);
+    const sent = await this.sendWithRetry('notification.send', message, correlationId);
+    if (sent) {
+      await this.publisher.publish(new NotificationSentEvent({ orderId: payload.orderId }, correlationId));
+    }
   }
 
-  async sendWithRetry(eventType: string, message: NotificationMessage): Promise<void> {
+  async sendWithRetry(eventType: string, message: NotificationMessage, correlationId: string): Promise<boolean> {
+    message.meta = { ...message.meta, correlationId };
     const ctx: RetryContext = {
       retries: 0,
       maxRetries: this.maxRetries,
@@ -81,32 +86,35 @@ export class NotificationService {
           throw new Error(`Simulated notification failure for ${eventType}`);
         }
 
-        this.logger.log(`Notification sent: ${JSON.stringify({ eventType, message })}`);
-        return;
+        this.logger.log(`Notification sent: ${JSON.stringify({ eventType, correlationId, message })}`);
+        return true;
       } catch (error) {
         ctx.retries++;
         if (ctx.retries > ctx.maxRetries) {
-          this.logger.error(`Notification failed after ${ctx.maxRetries} retries: ${eventType}`, error);
-          await this.publishToDlq(eventType, message, 'MAX_RETRIES_EXCEEDED');
-          return;
+          this.logger.error(`Notification failed after ${ctx.maxRetries} retries: ${eventType} [${correlationId}]`, error);
+          await this.publishToDlq(eventType, message, 'MAX_RETRIES_EXCEEDED', correlationId);
+          return false;
         }
 
         const delay = this.calculateBackoff(ctx.retries);
-        this.logger.warn(`Notification attempt ${ctx.retries} failed for ${eventType}, retrying in ${delay}ms`);
+        this.logger.warn(`Notification attempt ${ctx.retries} failed for ${eventType} [${correlationId}], retrying in ${delay}ms`);
         await this.sleep(delay);
       }
     }
+
+    return false;
   }
 
-  async publishToDlq(eventType: string, message: NotificationMessage, reason: string): Promise<void> {
+  async publishToDlq(eventType: string, message: NotificationMessage, reason: string, correlationId: string): Promise<void> {
     const dlqMessage = {
       ...message,
       originalEventType: eventType,
       failedAt: new Date().toISOString(),
       reason,
+      correlationId,
     };
     await this.publisher.publish(new DlqEvent(dlqMessage, ''));
-    this.logger.error(`Published to DLQ: ${JSON.stringify(dlqMessage)}`);
+    this.logger.error(`Published to DLQ [${correlationId}]: ${JSON.stringify(dlqMessage)}`);
   }
 
   async getDlqMessages(): Promise<Record<string, unknown>[]> {

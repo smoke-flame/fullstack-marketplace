@@ -2,13 +2,17 @@ import { apiClient } from '@/shared/api/client';
 import type { ProductResponse, CreateProductRequest, UpdateProductRequest } from '@marketplace/contracts/api/catalog/products';
 import type { CategoryResponse, CreateCategoryRequest } from '@marketplace/contracts/api/catalog/categories';
 
-export async function getAllCategories(signal?: AbortSignal): Promise<CategoryResponse[]> {
-  const response = await apiClient.get<CategoryResponse[]>('/categories', { signal });
+export async function getAllCategories(signal?: AbortSignal, query?: string): Promise<CategoryResponse[]> {
+  const params = query ? { q: query } : undefined;
+  const response = await apiClient.get<CategoryResponse[]>('/categories', { params, signal });
   return response.data;
 }
 
-export async function getAllProducts(signal?: AbortSignal): Promise<ProductResponse[]> {
-  const response = await apiClient.get<ProductResponse[]>('/products', { signal });
+export async function getAllProducts(signal?: AbortSignal, sellerId?: string): Promise<ProductResponse[]> {
+  const response = await apiClient.get<ProductResponse[]>('/products', {
+    params: sellerId ? { sellerId } : undefined,
+    signal,
+  });
   return response.data;
 }
 

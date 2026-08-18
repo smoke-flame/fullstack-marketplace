@@ -11,11 +11,10 @@ import { RabbitmqModule } from '@modules/rabbitmq/rabbitmq.module';
   imports: [PrismaModule, RabbitmqModule],
   providers: [
     PaymentService,
-    PaymentConsumer,
     PrismaPaymentRepository,
     { provide: PAYMENT_REPOSITORY, useClass: PrismaPaymentRepository },
   ],
-  controllers: [PaymentController],
+  controllers: [PaymentController, PaymentConsumer],
   exports: [PaymentService],
 })
 export class PaymentModule {}

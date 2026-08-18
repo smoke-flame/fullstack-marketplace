@@ -14,6 +14,7 @@ import { logoutRequestSchema } from '@marketplace/contracts/api/auth/logout';
 import type { LoginUserRequest } from '@marketplace/contracts/api/auth/login';
 import type { RefreshTokenRequest } from '@marketplace/contracts/api/auth/refresh';
 import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
+import { RateLimitGroup } from '@modules/gateway/decorators/rate-limit-group.decorator';
 
 type LoginBody = LoginUserRequest;
 type RegisterBody = z.infer<typeof registerUserRequestSchema>;
@@ -29,6 +30,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @RateLimitGroup('auth')
   @UsePipes(new ZodValidationPipe(loginUserRequestSchema))
   async login(@Body() body: LoginBody): Promise<LoginResponse> {
     return this.authService.login(body.email, body.password);
@@ -36,6 +38,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @RateLimitGroup('auth')
   @UsePipes(new ZodValidationPipe(registerUserRequestSchema))
   async register(@Body() body: RegisterBody, @Req() request: GatewayRequest): Promise<RegisterUserResponse> {
     const result = await this.authService.register(body.email, body.password, body.roles);
@@ -48,12 +51,14 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @RateLimitGroup('auth')
   @UsePipes(new ZodValidationPipe(refreshTokenRequestSchema))
   async refresh(@Body() body: RefreshBody): Promise<{ accessToken: string; refreshToken: string }> {
     return this.authService.refresh(body.refreshToken);
   }
 
   @Post('logout')
+  @RateLimitGroup('auth')
   async logout(@Body() body: LogoutBody): Promise<void> {
     await this.authService.logout(body.refreshToken);
   }

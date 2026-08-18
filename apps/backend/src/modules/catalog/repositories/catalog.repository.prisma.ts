@@ -35,8 +35,9 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
     };
   }
 
-  async findAllCategories(): Promise<CategoryEntity[]> {
+  async findAllCategories(query?: string): Promise<CategoryEntity[]> {
     const categories = await this.prisma.category.findMany({
+      ...(query ? { where: { title: { contains: query, mode: 'insensitive' } } } : {}),
       orderBy: { title: 'asc' },
     });
     return categories.map((c) => ({

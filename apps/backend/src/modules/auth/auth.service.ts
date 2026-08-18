@@ -67,7 +67,7 @@ export class AuthService {
     const parsed = JSON.parse(stored) as { userId: string };
     const roles = userRoleSchema.array().parse(payload.roles as unknown as UserRole[]);
     await this.revokeToken(payload.jti, parsed.userId);
-    const { refreshToken } = this.issueTokens({ id: parsed.userId, roles });
+    const { refreshToken } = await this.issueTokens({ id: parsed.userId, roles });
     return { id: parsed.userId, roles, refreshToken };
   }
 
@@ -99,7 +99,7 @@ export class AuthService {
     };
   }
 
-  issueTokens(user: UserCredentials): { accessToken: string; refreshToken: string } {
+  async issueTokens(user: UserCredentials): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = this.signAccessToken(user);
     const roles = userRoleSchema.array().parse(user.roles);
     const jti = `rt_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -114,7 +114,7 @@ export class AuthService {
     multi.set(key, JSON.stringify({ userId: user.id }), 'EX', Math.floor(ttl / 1000));
     multi.sadd(userKey, jti);
     multi.expire(userKey, Math.floor(ttl / 1000));
-    void multi.exec();
+    await multi.exec();
     return { accessToken, refreshToken };
   }
 
@@ -138,7 +138,7 @@ export class AuthService {
     const multi = this.redis.client.multi();
     multi.del(this.refreshKey(jti));
     multi.srem(this.userKey(userId), jti);
-    void multi.exec();
+    await multi.exec();
   }
 
   private async revokeAllUserTokens(userId: string): Promise<void> {

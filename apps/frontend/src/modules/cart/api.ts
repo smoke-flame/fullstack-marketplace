@@ -3,7 +3,7 @@ import type { CartResponse } from '@marketplace/contracts/api/cart/cart';
 import { z } from 'zod';
 
 export const upsertCartItemRequestSchema = z.object({
-  qty: z.number().int().positive().max(99),
+  qty: z.number().int().nonnegative().max(99),
 });
 
 export type UpsertCartItemRequest = z.infer<typeof upsertCartItemRequestSchema>;

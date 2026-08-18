@@ -21,6 +21,10 @@ export class SearchService {
       cursor: filters.cursor,
       limit: filters.limit,
     });
+    if (result.items.length === 0) {
+      return { items: [] };
+    }
+
     return {
       items: result.items.map((item) => ({
         productId: item.productId,
@@ -28,6 +32,8 @@ export class SearchService {
         price: item.price,
         categoryId: item.categoryId,
         sellerId: item.sellerId,
+        categoryTitle: item.categoryTitle ?? item.categoryId,
+        sellerEmail: item.sellerEmail ?? item.sellerId,
       })),
       nextCursor: result.nextCursor,
     };

@@ -9,8 +9,54 @@ import { toast } from '@/shared/ui/toast';
 import { getRating, getReviews, createReview, deleteReview } from '@/modules/reviews/api';
 import type { CreateReviewRequest } from '@marketplace/contracts/models/review/review';
 import { createReviewRequestSchema } from '@marketplace/contracts/models/review/review';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+
+type StarFill = 'full' | 'half' | 'empty';
+
+function Star({ fill }: { fill: StarFill }) {
+  return (
+    <span className="relative inline-block leading-none text-gray-300" aria-hidden="true">
+      ★
+      {fill !== 'empty' && (
+        <span
+          className={`absolute inset-y-0 left-0 overflow-hidden text-yellow-500 ${fill === 'half' ? 'w-1/2' : 'w-full'}`}
+          aria-hidden="true"
+        >
+          ★
+        </span>
+      )}
+    </span>
+  );
+}
+
+function StarRating({ value, onChange }: { value: number; onChange?: (value: number) => void }) {
+  return (
+    <div className="flex items-center gap-1" role={onChange ? 'radiogroup' : undefined}>
+      {Array.from({ length: 5 }, (_, index) => {
+        const star = index + 1;
+        const fill: StarFill = value >= star ? 'full' : value >= star - 0.5 ? 'half' : 'empty';
+        const content = <Star fill={fill} />;
+
+        if (!onChange) return <span key={star} className="text-2xl">{content}</span>;
+
+        return (
+          <button
+            key={star}
+            type="button"
+            role="radio"
+            aria-label={`${star} star${star !== 1 ? 's' : ''}`}
+            aria-checked={value === star}
+            className="rounded p-0.5 text-2xl transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary"
+            onClick={() => onChange(star)}
+          >
+            {content}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 interface RatingDisplayProps {
   productId: string;
@@ -27,15 +73,9 @@ export function RatingDisplay({ productId }: RatingDisplayProps) {
     return <div className="text-sm text-muted-foreground">No ratings yet</div>;
   }
 
-  const stars = Array.from({ length: 5 }, (_, i) => i < Math.round(rating.avg));
-
   return (
     <div className="flex items-center gap-2">
-      <div className="flex">
-        {stars.map((filled, i) => (
-          <span key={i} className={`text-lg ${filled ? 'text-yellow-500' : 'text-gray-300'}`}>★</span>
-        ))}
-      </div>
+      <StarRating value={rating.avg} />
       <span className="text-sm font-medium">{rating.avg.toFixed(1)}</span>
       <span className="text-sm text-muted-foreground">({rating.count} review{rating.count !== 1 ? 's' : ''})</span>
     </div>
@@ -53,12 +93,12 @@ export function ReviewForm({ productId, onReviewCreated }: ReviewFormProps) {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreateReviewRequest>({
     resolver: zodResolver(createReviewRequestSchema),
     mode: 'onBlur',
   });
-
   const onSubmit = async (data: CreateReviewRequest) => {
     setSubmitting(true);
     try {
@@ -77,14 +117,15 @@ export function ReviewForm({ productId, onReviewCreated }: ReviewFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4 rounded-lg border p-6">
       <h3 className="text-lg font-semibold">Write a Review</h3>
       <div className="space-y-2">
-        <Label htmlFor="rating">Rating</Label>
-        <Input
-          id="rating"
-          type="number"
-          min={1}
-          max={5}
-          isInvalid={!!errors.rating}
-          {...register('rating', { valueAsNumber: true })}
+        <Label>Rating</Label>
+        <Controller
+          name="rating"
+          control={control}
+          render={({ field }) => (
+            <div className={errors.rating ? 'rounded-md ring-2 ring-destructive' : undefined}>
+              <StarRating value={field.value ?? 0} onChange={field.onChange} />
+            </div>
+          )}
         />
         {errors.rating && <p className="text-sm text-destructive">{errors.rating.message}</p>}
       </div>
@@ -145,7 +186,7 @@ export function ReviewList({ productId, currentUserId, onReviewDeleted }: Review
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-yellow-500">{'★'.repeat(review.rating)}</span>
+                <StarRating value={review.rating} />
                 <span className="text-sm text-muted-foreground">{review.rating}/5</span>
               </div>
               {review.text && <p className="mt-2 text-sm">{review.text}</p>}

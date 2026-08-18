@@ -18,6 +18,7 @@ import { CorrelationIdMiddleware } from './modules/gateway/middleware/correlatio
 import { GatewayExceptionFilter } from './modules/gateway/gateway-exception.filter';
 import { JwtGatewayGuard } from './modules/gateway/guards/jwt-gateway.guard';
 import { RateLimitGuard } from './modules/gateway/guards/rate-limit.guard';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RateLimitGuard } from './modules/gateway/guards/rate-limit.guard';
     RedisModule,
     SagaModule,
     NotificationModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: GatewayExceptionFilter },
