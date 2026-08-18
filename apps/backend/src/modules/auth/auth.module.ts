@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { env } from '../../config/env';
+import { env } from '@config/env';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UsersModule } from '../users/user.module';
-import { CommonModule } from '../common/common.module';
-import { UserCreatedEvent } from './events/user-created.event';
+import { UsersModule } from '@modules/users/user.module';
+import { CommonModule } from '@modules/common/common.module';
 
 @Module({
   imports: [
@@ -19,6 +18,6 @@ import { UserCreatedEvent } from './events/user-created.event';
   ],
   providers: [AuthService],
   controllers: [AuthController],
-  exports: [AuthService, UserCreatedEvent],
+  exports: [AuthService],
 })
 export class AuthModule {}

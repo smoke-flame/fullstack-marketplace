@@ -1,8 +1,7 @@
-import { PipeTransform, Injectable } from '@nestjs/common';
+import { PipeTransform } from '@nestjs/common';
 import { ZodSchema } from 'zod';
 import { ValidationException } from '../errors/validation-error';
 
-@Injectable()
 export class ZodValidationPipe implements PipeTransform {
   constructor(private readonly schema: ZodSchema) {}
 

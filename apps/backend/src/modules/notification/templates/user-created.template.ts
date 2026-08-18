@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { NotificationTemplate } from './notification.template';
-import type { UserCreatedPayload } from '../../auth/events/user-created.event';
+
+export interface UserCreatedNotification extends Record<string, unknown> {
+  userId: string;
+  email: string;
+  roles: string[];
+}
 
 @Injectable()
-export class UserCreatedTemplate implements NotificationTemplate<UserCreatedPayload> {
-
-  render(payload: UserCreatedPayload) {
+export class UserCreatedTemplate implements NotificationTemplate<UserCreatedNotification> {
+  render(payload: UserCreatedNotification) {
     const message = {
-      type: 'user.created',
+      type: 'user.registered',
       to: payload.email,
       subject: 'Welcome to Marketplace!',
       body: `Hi ${payload.email.split('@')[0]}, thanks for registering.`,

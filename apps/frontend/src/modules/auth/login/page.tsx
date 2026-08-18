@@ -6,18 +6,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { loginUser } from '@/modules/auth/api';
 import { setAccessToken, setRefreshToken } from '@/modules/auth/auth';
-import { useAppDispatch } from '@/shared/hooks';
-import { setCredentials } from '@/modules/auth/userSlice';
 import { toast } from '@/shared/ui/toast';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { loginUserRequestSchema, type LoginUserRequest } from '@marketplace/contracts/api/auth/login';
-import type { LoginResponse } from '@marketplace/contracts/api/auth/login';
 
 export function LoginPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const {
     register,
     handleSubmit,
@@ -33,7 +29,7 @@ export function LoginPage() {
       setAccessToken(response.accessToken);
       setRefreshToken(response.refreshToken);
       toast.success('Welcome back!');
-      router.push('/');
+      router.push('/search');
     } catch {
       // error handled by interceptor toast
     }

@@ -19,6 +19,74 @@
       "types": "./dist/models/index.d.ts",
       "default": "./dist/models/index.js"
     },
+    "./models": {
+      "types": "./dist/models/index.d.ts",
+      "default": "./dist/models/index.js"
+    },
+    "./models/order": {
+      "types": "./dist/models/order.d.ts",
+      "default": "./dist/models/order.js"
+    },
+    "./models/stock": {
+      "types": "./dist/models/stock.d.ts",
+      "default": "./dist/models/stock.js"
+    },
+    "./models/payment": {
+      "types": "./dist/models/payment.d.ts",
+      "default": "./dist/models/payment.js"
+    },
+    "./models/review": {
+      "types": "./dist/models/review/index.d.ts",
+      "default": "./dist/models/review/index.js"
+    },
+    "./models/review/review": {
+      "types": "./dist/models/review/review.d.ts",
+      "default": "./dist/models/review/review.js"
+    },
+    "./errors/inventory": {
+      "types": "./dist/errors/inventory.d.ts",
+      "default": "./dist/errors/inventory.js"
+    },
+    "./errors/gateway": {
+      "types": "./dist/errors/gateway.d.ts",
+      "default": "./dist/errors/gateway.js"
+    },
+    "./errors/catalog": {
+      "types": "./dist/errors/catalog.d.ts",
+      "default": "./dist/errors/catalog.js"
+    },
+    "./errors/search": {
+      "types": "./dist/errors/search.d.ts",
+      "default": "./dist/errors/search.js"
+    },
+    "./errors/cart": {
+      "types": "./dist/errors/cart.d.ts",
+      "default": "./dist/errors/cart.js"
+    },
+    "./errors/order": {
+      "types": "./dist/errors/order.d.ts",
+      "default": "./dist/errors/order.js"
+    },
+    "./errors/payment": {
+      "types": "./dist/errors/payment.d.ts",
+      "default": "./dist/errors/payment.js"
+    },
+    "./errors/review": {
+      "types": "./dist/errors/review.d.ts",
+      "default": "./dist/errors/review.js"
+    },
+    "./models/productStatus": {
+      "types": "./dist/models/productStatus.d.ts",
+      "default": "./dist/models/productStatus.js"
+    },
+    "./models/category": {
+      "types": "./dist/models/category.d.ts",
+      "default": "./dist/models/category.js"
+    },
+    "./models/product": {
+      "types": "./dist/models/product.d.ts",
+      "default": "./dist/models/product.js"
+    },
     "./api/auth/register": {
       "types": "./dist/api/auth/register.d.ts",
       "default": "./dist/api/auth/register.js"
@@ -31,10 +99,6 @@
       "types": "./dist/api/auth/refresh.d.ts",
       "default": "./dist/api/auth/refresh.js"
     },
-    "./errors/gateway": {
-      "types": "./dist/errors/gateway.d.ts",
-      "default": "./dist/errors/gateway.js"
-    },
     "./api/auth/me": {
       "types": "./dist/api/auth/me.d.ts",
       "default": "./dist/api/auth/me.js"
@@ -42,6 +106,118 @@
     "./api/auth/logout": {
       "types": "./dist/api/auth/logout.d.ts",
       "default": "./dist/api/auth/logout.js"
+    },
+    "./api/catalog/categories": {
+      "types": "./dist/api/catalog/categories.d.ts",
+      "default": "./dist/api/catalog/categories.js"
+    },
+    "./api/catalog/products": {
+      "types": "./dist/api/catalog/products.d.ts",
+      "default": "./dist/api/catalog/products.js"
+    },
+    "./api/catalog/index": {
+      "types": "./dist/api/catalog/index.d.ts",
+      "default": "./dist/api/catalog/index.js"
+    },
+    "./api/catalog": {
+      "types": "./dist/api/catalog/index.d.ts",
+      "default": "./dist/api/catalog/index.js"
+    },
+    "./api/search/search": {
+      "types": "./dist/api/search/search.d.ts",
+      "default": "./dist/api/search/search.js"
+    },
+    "./api/cart/cart": {
+      "types": "./dist/api/cart/cart.d.ts",
+      "default": "./dist/api/cart/cart.js"
+    },
+    "./api/inventory/inventory": {
+      "types": "./dist/api/inventory/inventory.d.ts",
+      "default": "./dist/api/inventory/inventory.js"
+    },
+    "./api/inventory": {
+      "types": "./dist/api/inventory/index.d.ts",
+      "default": "./dist/api/inventory/index.js"
+    },
+    "./api/orders/orders": {
+      "types": "./dist/api/orders/orders.d.ts",
+      "default": "./dist/api/orders/orders.js"
+    },
+    "./api/orders": {
+      "types": "./dist/api/orders/index.d.ts",
+      "default": "./dist/api/orders/index.js"
+    },
+    "./api/index": {
+      "types": "./dist/api/index.d.ts",
+      "default": "./dist/api/index.js"
+    },
+    "./events/catalog/index": {
+      "types": "./dist/events/catalog/index.d.ts",
+      "default": "./dist/events/catalog/index.js"
+    },
+    "./events/catalog/product-created": {
+      "types": "./dist/events/catalog/product-created.d.ts",
+      "default": "./dist/events/catalog/product-created.js"
+    },
+    "./events/catalog/product-updated": {
+      "types": "./dist/events/catalog/product-updated.d.ts",
+      "default": "./dist/events/catalog/product-updated.js"
+    },
+    "./events/catalog/product-archived": {
+      "types": "./dist/events/catalog/product-archived.d.ts",
+      "default": "./dist/events/catalog/product-archived.js"
+    },
+    "./events/order/index": {
+      "types": "./dist/events/order/index.d.ts",
+      "default": "./dist/events/order/index.js"
+    },
+    "./events/order/order-events": {
+      "types": "./dist/events/order/order-events.d.ts",
+      "default": "./dist/events/order/order-events.js"
+    },
+    "./events/inventory": {
+      "types": "./dist/events/inventory/index.d.ts",
+      "default": "./dist/events/inventory/index.js"
+    },
+    "./events/inventory/inventory-events": {
+      "types": "./dist/events/inventory/inventory-events.d.ts",
+      "default": "./dist/events/inventory/inventory-events.js"
+    },
+    "./events/payment": {
+      "types": "./dist/events/payment/index.d.ts",
+      "default": "./dist/events/payment/index.js"
+    },
+    "./events/payment/payment-events": {
+      "types": "./dist/events/payment/payment-events.d.ts",
+      "default": "./dist/events/payment/payment-events.js"
+    },
+    "./events/review": {
+      "types": "./dist/events/review/index.d.ts",
+      "default": "./dist/events/review/index.js"
+    },
+    "./events/review/review-events": {
+      "types": "./dist/events/review/review-events.d.ts",
+      "default": "./dist/events/review/review-events.js"
+    },
+    "./events/commands": {
+      "types": "./dist/events/commands.d.ts",
+      "default": "./dist/events/commands.js"
+    },
+    "./events/index": {
+      "types": "./dist/events/index.d.ts",
+      "default": "./dist/events/index.js"
+    },
+    "./commands/order/index": {
+      "types": "./dist/commands/order/index.d.ts",
+      "default": "./dist/commands/order/index.js"
+    },
+    "./commands/order/order-commands": {
+      "types": "./dist/commands/order/order-commands.d.ts",
+      "default": "./dist/commands/order/order-commands.js"
+    },
+    "./commands": {
+      "types": "./dist/commands/index.d.ts",
+      "default": "./dist/commands/index.js"
     }
   },
   "scripts": {

@@ -53,9 +53,9 @@ export function HomePage() {
             </p>
             <div className="flex items-center justify-center gap-4 pt-4">
               {user ? (
-                <Link href="/listings">
-                  <Button size="lg">Browse listings</Button>
-                </Link>
+                 <Link href="/products">
+                   <Button size="lg">Browse listings</Button>
+                 </Link>
               ) : (
                 <>
                   <Link href="/register">

@@ -1,8 +1,8 @@
-import { env } from '../../../config/env';
-import { ServiceUnavailableException } from '../errors/gateway-errors';
+import { env } from '@config/env';
+import { ServiceUnavailableException } from '@modules/common/errors/gateway-errors';
 
 export async function withInternalTimeout<T>(
-  service: string,
+  _service: string,
   operation: () => Promise<T>,
 ): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
@@ -11,7 +11,7 @@ export async function withInternalTimeout<T>(
       operation(),
       new Promise<never>((_, reject) => {
         timer = setTimeout(
-          () => reject(new Error(`${service} timed out`)),
+          () => reject(new ServiceUnavailableException()),
           env.INTERNAL_CALL_TIMEOUT_MS,
         );
       }),

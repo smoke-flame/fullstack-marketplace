@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Post, Req, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards, UsePipes } from '@nestjs/common';
 import { z } from 'zod';
 import { AuthService } from './auth.service';
-import { EventPublisher } from '../rabbitmq/event-publisher';
+import { EventPublisher } from '@modules/rabbitmq/event-publisher';
 import { UserCreatedEvent } from './events/user-created.event';
-import { Public } from '../common/decorators/public.decorator';
-import { UnauthorizedException } from '../common/errors/gateway-errors';
-import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { Public } from '@modules/common/decorators/public.decorator';
+import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
+import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
 import { loginUserRequestSchema, type LoginResponse } from '@marketplace/contracts/api/auth/login';
 import { refreshTokenRequestSchema } from '@marketplace/contracts/api/auth/refresh';
 import { registerUserRequestSchema, type RegisterUserResponse } from '@marketplace/contracts/api/auth/register';
@@ -13,7 +13,7 @@ import { type MeResponse } from '@marketplace/contracts/api/auth/me';
 import { logoutRequestSchema } from '@marketplace/contracts/api/auth/logout';
 import type { LoginUserRequest } from '@marketplace/contracts/api/auth/login';
 import type { RefreshTokenRequest } from '@marketplace/contracts/api/auth/refresh';
-import type { GatewayRequest } from '../gateway/middleware/correlation-id.middleware';
+import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
 
 type LoginBody = LoginUserRequest;
 type RegisterBody = z.infer<typeof registerUserRequestSchema>;
@@ -54,16 +54,13 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UsePipes(new ZodValidationPipe(logoutRequestSchema))
   async logout(@Body() body: LogoutBody): Promise<void> {
     await this.authService.logout(body.refreshToken);
   }
 
   @Get('me')
+  @UseGuards(JwtGatewayGuard)
   async me(@Req() request: GatewayRequest): Promise<MeResponse> {
-    if (!request.user) {
-      throw new UnauthorizedException();
-    }
-    return this.authService.me(request.user.id);
+    return this.authService.me(request.user!.id);
   }
 }

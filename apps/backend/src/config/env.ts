@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { config } from 'dotenv';
+
+config({ path: require('path').join(__dirname, '..', '..', '.env') });
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -15,6 +18,14 @@ const schema = z.object({
   RATE_LIMIT_AUTH_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_CATALOG_MAX: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_CATALOG_WINDOW_SECONDS: z.coerce.number().int().positive().default(60),
+  INTERNAL_API_KEY: z.string().min(1, 'must be set'),
+  SAGA_STEP_TIMEOUT_MS: z.coerce.number().int().positive().default(60000),
+  PAYMENT_FAILURE_PROBABILITY: z.coerce.number().min(0).max(1).default(0.2),
+  PAYMENT_MIN_DELAY_MS: z.coerce.number().int().positive().default(1000),
+  PAYMENT_MAX_DELAY_MS: z.coerce.number().int().positive().default(5000),
+  NOTIFICATION_FAILURE_PROBABILITY: z.coerce.number().min(0).max(1).default(0),
+  NOTIFICATION_MAX_RETRIES: z.coerce.number().int().positive().default(5),
+  NOTIFICATION_RETRY_BASE_DELAY_MS: z.coerce.number().int().positive().default(1000),
 });
 const result = schema.safeParse(process.env);
 if (!result.success) {

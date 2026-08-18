@@ -3,7 +3,7 @@ import { JwtGatewayGuard } from './guards/jwt-gateway.guard';
 import { RateLimitGuard } from './guards/rate-limit.guard';
 import { GatewayExceptionFilter } from './gateway-exception.filter';
 import { CorrelationIdMiddleware } from './middleware/correlation-id.middleware';
-import { CommonModule } from '../common/common.module';
+import { CommonModule } from '@modules/common/common.module';
 
 @Global()
 @Module({

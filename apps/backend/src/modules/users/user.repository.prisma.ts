@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@modules/prisma/prisma.service';
 import { UserRepository, type UserEntity } from './user.repository';
 import type { UserRole } from '@marketplace/contracts/models/user';
 

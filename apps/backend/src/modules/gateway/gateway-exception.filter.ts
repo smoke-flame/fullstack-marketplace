@@ -9,7 +9,7 @@ import {
 import { gatewayErrorCodes, type ApiError } from '@marketplace/contracts/errors/gateway';
 import type { Response } from 'express';
 import type { GatewayRequest } from './middleware/correlation-id.middleware';
-import { BaseHttpException } from '../common/errors/base-http.exception';
+import { BaseHttpException } from '@modules/common/errors/base-http.exception';
 
 @Catch()
 export class GatewayExceptionFilter implements ExceptionFilter {

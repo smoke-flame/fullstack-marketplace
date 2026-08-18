@@ -1,15 +1,15 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { RedisService } from '../redis/redis.service';
-import { USER_REPOSITORY, UserRepository } from '../users/user.repository';
+import { RedisService } from '@modules/redis/redis.service';
+import { USER_REPOSITORY, UserRepository } from '@modules/users/user.repository';
 import { userRoleSchema, type UserRole } from '@marketplace/contracts/models/user';
 import {
   EmailTakenException,
   InvalidCredentialsException,
   RefreshTokenInvalidException,
   RefreshTokenRevokedException,
-} from '../common/errors/gateway-errors';
-import { env } from '../../config/env';
+} from '@modules/common/errors/gateway-errors';
+import { env } from '@config/env';
 
 interface UserCredentials {
   id: string;

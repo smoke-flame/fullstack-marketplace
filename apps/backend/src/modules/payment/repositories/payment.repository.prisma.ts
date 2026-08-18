@@ -1,0 +1,85 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@modules/prisma/prisma.service';
+import { PaymentRepository } from './payment.repository';
+import type { PaymentResponse, PaymentStatus } from '@marketplace/contracts/models/payment';
+
+@Injectable()
+export class PrismaPaymentRepository implements PaymentRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async create(data: {
+    orderId: string;
+    buyerId: string;
+    amount: number;
+    status: PaymentStatus;
+    reason?: string;
+  }): Promise<PaymentResponse> {
+    const payment = await this.prisma.payment.create({
+      data: {
+        orderId: data.orderId,
+        buyerId: data.buyerId,
+        amount: data.amount,
+        status: data.status,
+        reason: data.reason ?? null,
+      },
+    });
+    return this.mapPayment(payment);
+  }
+
+  async findByOrderId(orderId: string): Promise<PaymentResponse | null> {
+    const payment = await this.prisma.payment.findFirst({
+      where: { orderId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return payment ? this.mapPayment(payment) : null;
+  }
+
+  async findByIdempotentKey(sagaId: string): Promise<PaymentResponse | null> {
+    const payment = await this.prisma.payment.findFirst({
+      where: { orderId: sagaId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return payment ? this.mapPayment(payment) : null;
+  }
+
+  async updateStatus(id: string, status: PaymentStatus, reason?: string): Promise<PaymentResponse> {
+    const payment = await this.prisma.payment.update({
+      where: { id },
+      data: {
+        status,
+        reason: reason ?? null,
+      },
+    });
+    return this.mapPayment(payment);
+  }
+
+  async findByBuyerIdAndOrderId(buyerId: string, orderId: string): Promise<PaymentResponse[]> {
+    const payments = await this.prisma.payment.findMany({
+      where: { buyerId, orderId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return payments.map(this.mapPayment);
+  }
+
+  private mapPayment(payment: {
+    id: string;
+    orderId: string;
+    buyerId: string;
+    amount: number;
+    status: PaymentStatus;
+    reason: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): PaymentResponse {
+    return {
+      id: payment.id,
+      orderId: payment.orderId,
+      buyerId: payment.buyerId,
+      amount: payment.amount,
+      status: payment.status,
+      reason: payment.reason as PaymentResponse['reason'],
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+    };
+  }
+}

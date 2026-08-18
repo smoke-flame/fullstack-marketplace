@@ -1,6 +1,6 @@
 import type { UserRole } from '@marketplace/contracts/models/user';
-import { RabbitMQEvent } from '../../rabbitmq/rabbitmq.event';
-import { RabbitMQEventType } from '../../rabbitmq/rabbitmq.constants';
+import { RabbitMQEvent } from '@modules/rabbitmq/rabbitmq.event';
+import { RabbitMQEventType } from '@modules/rabbitmq/rabbitmq.constants';
 
 export type UserCreatedPayload = {
   userId: string;

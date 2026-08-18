@@ -7,9 +7,6 @@ import Link from 'next/link';
 import { z } from 'zod';
 import { useState } from 'react';
 import { registerUser } from '@/modules/auth/api';
-import { setAccessToken, setRefreshToken } from '@/modules/auth/auth';
-import { useAppDispatch } from '@/shared/hooks';
-import { setCredentials } from '@/modules/auth/userSlice';
 import { toast } from '@/shared/ui/toast';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -34,7 +31,6 @@ type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 export function RegisterPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
   const [isSeller, setIsSeller] = useState(false);
   const {
     register,

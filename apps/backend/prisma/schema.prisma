@@ -12,6 +12,26 @@ enum Role {
   SELLER
 }
 
+enum ProductStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  RESERVED
+  PAID
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -19,4 +39,174 @@ model User {
   roles     Role[]   @default([BUYER])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  parentId  String?
+  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+  title     String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+model Product {
+  id          String       @id @default(uuid())
+  sellerId    String
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+  title       String       @db.VarChar(200)
+  description String?      @db.Text
+  price       Int
+  status      ProductStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model SearchDocument {
+  id          String   @id @default(uuid())
+  productId   String   @unique
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  price       Int
+  categoryId  String
+  sellerId    String
+  status      ProductStatus @default(ACTIVE)
+  occurredAt  DateTime
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([sellerId])
+  @@index([price])
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  buyerId     String
+  status      OrderStatus @default(PENDING)
+  totalAmount Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  items       OrderItem[]
+  timeline    OrderTimeline[]
+
+  @@index([buyerId])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  qty       Int
+  price     Int
+
+  @@index([orderId])
+}
+
+model OrderTimeline {
+  id        String      @id @default(uuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  reason    String?
+  occurredAt DateTime   @default(now())
+
+  @@index([orderId])
+}
+
+model Outbox {
+  id           String   @id @default(uuid())
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       String
+  createdAt     DateTime @default(now())
+  publishedAt   DateTime?
+
+  @@index([aggregateType, aggregateId])
+  @@index([publishedAt])
+}
+
+model Stock {
+  productId String   @id
+  onHand    Int      @default(0)
+  reserved  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reservations Reservation[]
+
+  @@index([productId])
+}
+
+model Reservation {
+  id        String   @id @default(uuid())
+  sagaId    String
+  productId String
+  qty       Int
+  expiresAt DateTime
+
+  stock Stock @relation(fields: [productId], references: [productId], onDelete: Cascade)
+
+  @@index([sagaId])
+  @@index([productId])
+  @@index([expiresAt])
+}
+
+model Payment {
+  id        String      @id @default(uuid())
+  orderId   String
+  buyerId   String
+  amount    Int
+  status    PaymentStatus @default(PROCESSING)
+  reason    String?      @db.VarChar(50)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([orderId])
+  @@index([buyerId])
+  @@index([status])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  productId String
+  buyerId   String
+  rating    Int
+  text      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([buyerId, productId])
+  @@index([productId])
+  @@index([buyerId])
+}
+
+model Purchase {
+  buyerId   String
+  productId String
+  orderId   String
+  createdAt DateTime @default(now())
+
+  @@id([buyerId, productId])
+  @@index([productId])
+}
+
+model ProductRating {
+  productId   String @id
+  avgRating   Float  @default(0)
+  reviewCount Int    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
