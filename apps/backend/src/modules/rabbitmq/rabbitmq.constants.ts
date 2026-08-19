@@ -39,6 +39,8 @@ export const RABBITMQ_DLQ_REPLAY_CLIENT = 'DLQ_REPLAY_CLIENT';
 
 export const DLQ_NAME = 'notification.dlq';
 export const DLQ_REPLAY_NAME = 'notification.dlq.replay';
+export const PAYMENT_DLQ_NAME = 'payment.dlq';
+export const RABBITMQ_PAYMENT_DLQ_CLIENT = 'PAYMENT_DLQ_CLIENT';
 
 export enum RabbitMQCommandType {
   INVENTORY_RESERVE = 'inventory.reserve',
@@ -62,7 +64,7 @@ export const DEFAULT_RABBITMQ_URL = 'amqp://marketplace:change-me-in-production@
 // acknowledge manually.  Server-side microservices in `main.ts` pass `false`
 // explicitly so their handlers can ack/nack messages themselves.
 export function createRmqOptions(queue: string, noAck = true) {
-  const isDlq = queue === DLQ_NAME;
+  const isDlq = queue === DLQ_NAME || queue === PAYMENT_DLQ_NAME;
   return {
     transport: Transport.RMQ as typeof Transport.RMQ,
     options: {

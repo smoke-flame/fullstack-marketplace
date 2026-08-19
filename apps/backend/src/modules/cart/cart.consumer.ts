@@ -30,10 +30,15 @@ export class CartConsumer {
     const channel = context.getChannelRef();
     const message = context.getMessage();
     try {
-      if (!await this.idempotency.claim('cart', eventId, eventType)) { await channel.ack(message); return; }
+      if (await this.idempotency.isProcessed('cart', eventId)) { await this.idempotency.ack(channel, message); return; }
+
       await work();
-      await channel.ack(message);
+      await this.idempotency.markProcessed('cart', eventId, eventType);
+      await this.idempotency.ack(channel, message);
+    } catch (error) {
+      // do not release claim here; using markProcessed after successful work
+      this.logger.error(`Cart event handling failed: ${error}`);
+      await this.idempotency.nack(channel, message, true);
     }
-    catch (error) { await this.idempotency.releaseClaim('cart', eventId); this.logger.error(`Cart event handling failed: ${error}`); await channel.nack(message, false, true); }
   }
 }

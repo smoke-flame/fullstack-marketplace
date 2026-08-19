@@ -104,7 +104,7 @@ export class PrismaOrderRepository implements OrderRepository {
       where: {
         buyerId,
         status: {
-          in: ['PENDING', 'RESERVED', 'PAID'],
+          in: ['PENDING', 'RESERVED', 'COMPLETED'],
         },
       },
       include: {

@@ -13,7 +13,7 @@ export class InventoryConsumer {
     private readonly inventoryService: InventoryService,
     private readonly publisher: EventPublisher,
     private readonly idempotency: EventIdempotencyService,
-  ) {}
+  ) { }
 
   @EventPattern('inventory.reserve')
   async onInventoryReserve(@Payload() event: { eventId: string; payload: { sagaId: string; items: Array<{ productId: string; qty: number }> }; correlationId: string }, @Ctx() context: RmqContext) {
@@ -21,8 +21,8 @@ export class InventoryConsumer {
     const channel = context.getChannelRef();
     const originalMessage = context.getMessage();
     try {
-      if (!await this.idempotency.claim('inventory', event.eventId, 'inventory.reserve')) {
-        await channel.ack(originalMessage);
+      if (await this.idempotency.isProcessed('inventory', event.eventId)) {
+        await this.idempotency.ack(channel, originalMessage);
         return;
       }
       const result = await this.inventoryService.reserveStock(event.payload.sagaId, event.payload.items);
@@ -36,11 +36,12 @@ export class InventoryConsumer {
           shortages: result.shortages ?? [],
         }, event.correlationId));
       }
-      await channel.ack(originalMessage);
+      await this.idempotency.markProcessed('inventory', event.eventId, 'inventory.reserve');
+      await this.idempotency.ack(channel, originalMessage);
     } catch (error) {
-      await this.idempotency.releaseClaim('inventory', event.eventId);
+      // do not release claim here; we didn't claim up-front in this safer flow
       this.logger.error(`Inventory reserve failed for saga ${event.payload.sagaId}: ${error}`);
-      await channel.nack(originalMessage, false, true);
+      await this.idempotency.nack(channel, originalMessage, true);
     }
   }
 
@@ -50,32 +51,36 @@ export class InventoryConsumer {
     const channel = context.getChannelRef();
     const originalMessage = context.getMessage();
     try {
-      if (!await this.idempotency.claim('inventory', event.eventId, 'inventory.release')) {
-        await channel.ack(originalMessage);
+      if (await this.idempotency.isProcessed('inventory', event.eventId)) {
+        await this.idempotency.ack(channel, originalMessage);
         return;
       }
+
       await this.inventoryService.releaseStock(event.payload.sagaId);
-      await channel.ack(originalMessage);
+      await this.idempotency.markProcessed('inventory', event.eventId, 'inventory.release');
+      await this.idempotency.ack(channel, originalMessage);
     } catch (error) {
-      await this.idempotency.releaseClaim('inventory', event.eventId);
+      // do not release claim here; we didn't claim up-front in this safer flow
       this.logger.error(`Inventory release failed for saga ${event.payload.sagaId}: ${error}`);
-      await channel.nack(originalMessage, false, true);
+      await this.idempotency.nack(channel, originalMessage, true);
     }
   }
 
   @EventPattern('order.completed')
   async onOrderCompleted(@Payload() event: { eventId: string; payload: { orderId: string; items: Array<{ productId: string; qty: number }> }; correlationId: string }, @Ctx() context: RmqContext) {
     try {
-      if (!await this.idempotency.claim('inventory', event.eventId, 'order.completed')) {
-        await context.getChannelRef().ack(context.getMessage());
+      if (await this.idempotency.isProcessed('inventory', event.eventId)) {
+        await this.idempotency.ack(context.getChannelRef(), context.getMessage());
         return;
       }
+
       await this.inventoryService.confirmStock(event.payload.orderId, event.payload.items);
-      await context.getChannelRef().ack(context.getMessage());
+      await this.idempotency.markProcessed('inventory', event.eventId, 'order.completed');
+      await this.idempotency.ack(context.getChannelRef(), context.getMessage());
     } catch (error) {
-      await this.idempotency.releaseClaim('inventory', event.eventId);
+      // do not release claim here; we didn't claim up-front in this safer flow
       this.logger.error(`Inventory confirmation failed for order ${event.payload.orderId}: ${error}`);
-      await context.getChannelRef().nack(context.getMessage(), false, true);
+      await this.idempotency.nack(context.getChannelRef(), context.getMessage(), true);
     }
   }
 }

@@ -13,7 +13,7 @@ export class SearchConsumer {
   constructor(
     private readonly searchService: SearchService,
     private readonly idempotency: EventIdempotencyService,
-  ) {}
+  ) { }
 
   @EventPattern(RabbitMQEventType.PRODUCT_CREATED)
   async onProductCreated(@Payload() event: { eventId: string; payload: ProductCreatedPayload; occurredAt: string; correlationId: string }, @Ctx() context: RmqContext) {
@@ -37,10 +37,15 @@ export class SearchConsumer {
     const channel = context.getChannelRef();
     const message = context.getMessage();
     try {
-      if (!await this.idempotency.claim('search', eventId, eventType)) { await channel.ack(message); return; }
+      if (await this.idempotency.isProcessed('search', eventId)) { await this.idempotency.ack(channel, message); return; }
+
       await work();
-      await channel.ack(message);
+      await this.idempotency.markProcessed('search', eventId, eventType);
+      await this.idempotency.ack(channel, message);
+    } catch (error) {
+      // do not release claim here; using markProcessed after successful work
+      this.logger.error(`Search event handling failed: ${error}`);
+      await this.idempotency.nack(channel, message, true);
     }
-    catch (error) { await this.idempotency.releaseClaim('search', eventId); this.logger.error(`Search event handling failed: ${error}`); await channel.nack(message, false, true); }
   }
 }

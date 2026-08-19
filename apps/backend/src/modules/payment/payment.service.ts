@@ -5,6 +5,7 @@ import { EventPublisher } from '@modules/rabbitmq/event-publisher';
 import { type PaymentSucceededPayload, type PaymentFailedPayload, type PaymentRefundedPayload } from '@marketplace/contracts/events/payment/payment-events';
 import { env } from '@config/env';
 import type { PaymentResponse } from '@marketplace/contracts/models/payment';
+import { PaymentDlqEvent } from './events/payment-dlq.event';
 
 @Injectable()
 export class PaymentService {
@@ -12,6 +13,8 @@ export class PaymentService {
   private readonly failureProbability: number;
   private readonly minDelayMs: number;
   private readonly maxDelayMs: number;
+  private readonly maxRetries: number;
+  private readonly baseRetryDelayMs: number;
 
   constructor(
     @Inject(PAYMENT_REPOSITORY) private readonly paymentRepo: PaymentRepository,
@@ -20,6 +23,8 @@ export class PaymentService {
     this.failureProbability = env.PAYMENT_FAILURE_PROBABILITY ?? 0.2;
     this.minDelayMs = env.PAYMENT_MIN_DELAY_MS ?? 1000;
     this.maxDelayMs = env.PAYMENT_MAX_DELAY_MS ?? 5000;
+    this.maxRetries = env.PAYMENT_MAX_RETRIES ?? 3;
+    this.baseRetryDelayMs = env.PAYMENT_RETRY_BASE_DELAY_MS ?? 1000;
   }
 
   async processCharge(sagaId: string, amount: number, buyerId: string, correlationId: string): Promise<void> {
@@ -62,38 +67,67 @@ export class PaymentService {
     }
     const payment = created.payment;
 
-    const delay = this.randomDelay();
-    this.logger.log(`Payment ${payment.id} for saga ${sagaId} processing, will complete in ${delay}ms`);
-
+    // Process payment asynchronously with retry/backoff and DLQ on repeated failure
     setTimeout(async () => {
       try {
-        const current = await this.paymentRepo.findByOrderId(sagaId);
-        if (!current || current.status !== 'PROCESSING') {
-          this.logger.warn(`Payment for saga ${sagaId} is no longer PROCESSING, skipping`);
-          return;
-        }
+        let attempt = 0;
+        while (attempt <= this.maxRetries) {
+          const current = await this.paymentRepo.findByOrderId(sagaId);
+          if (!current || current.status !== 'PROCESSING') {
+            this.logger.warn(`Payment for saga ${sagaId} is no longer PROCESSING, skipping`);
+            return;
+          }
 
-        if (Math.random() < this.failureProbability) {
-          const reason = Math.random() < 0.5 ? 'INSUFFICIENT_FUNDS' : 'PROVIDER_ERROR';
-          if (!await this.paymentRepo.transitionStatus(payment.id, 'PROCESSING', 'FAILED', reason)) return;
-          this.logger.warn(`Payment ${payment.id} failed for saga ${sagaId}: ${reason}`);
-          await this.publisher.publish(new PaymentFailedEvent({
-            sagaId,
-            paymentId: payment.id,
-            reason,
-          } as PaymentFailedPayload, correlationId));
-        } else {
-          if (!await this.paymentRepo.transitionStatus(payment.id, 'PROCESSING', 'SUCCEEDED')) return;
-          this.logger.log(`Payment ${payment.id} succeeded for saga ${sagaId}`);
-          await this.publisher.publish(new PaymentSucceededEvent({
-            sagaId,
-            paymentId: payment.id,
-          } as PaymentSucceededPayload, correlationId));
+          attempt++;
+          const delay = this.randomDelay();
+          this.logger.log(`Payment ${payment.id} attempt ${attempt}/${this.maxRetries} for saga ${sagaId}, will attempt in ${delay}ms`);
+          await new Promise((r) => setTimeout(r, delay));
+
+          if (Math.random() < this.failureProbability) {
+            const reason = Math.random() < 0.5 ? 'INSUFFICIENT_FUNDS' : 'PROVIDER_ERROR';
+            this.logger.warn(`Payment ${payment.id} attempt ${attempt} failed for saga ${sagaId}: ${reason}`);
+            if (attempt > this.maxRetries) {
+              if (!await this.paymentRepo.transitionStatus(payment.id, 'PROCESSING', 'FAILED', reason)) return;
+              this.logger.warn(`Payment ${payment.id} failed after ${this.maxRetries} retries for saga ${sagaId}: ${reason}`);
+              await this.publisher.publish(new PaymentFailedEvent({
+                sagaId,
+                paymentId: payment.id,
+                reason,
+              } as PaymentFailedPayload, correlationId));
+
+              // publish to payment DLQ
+              await this.publisher.publish(new PaymentDlqEvent({
+                sagaId,
+                orderId: payment.orderId,
+                paymentId: payment.id,
+                amount: payment.amount,
+                buyerId: payment.buyerId,
+                reason,
+                failedAt: new Date().toISOString(),
+                correlationId,
+              }, correlationId));
+              return;
+            }
+
+            // backoff before next attempt
+            const backoff = Math.min(this.baseRetryDelayMs * Math.pow(2, attempt - 1), 30000);
+            this.logger.log(`Waiting ${backoff}ms before next payment attempt for ${payment.id}`);
+            await new Promise((r) => setTimeout(r, backoff));
+            continue;
+          } else {
+            if (!await this.paymentRepo.transitionStatus(payment.id, 'PROCESSING', 'SUCCEEDED')) return;
+            this.logger.log(`Payment ${payment.id} succeeded for saga ${sagaId}`);
+            await this.publisher.publish(new PaymentSucceededEvent({
+              sagaId,
+              paymentId: payment.id,
+            } as PaymentSucceededPayload, correlationId));
+            return;
+          }
         }
       } catch (error) {
         this.logger.error(`Failed to complete payment ${payment.id} for saga ${sagaId}: ${error}`);
       }
-    }, delay);
+    }, this.randomDelay());
   }
 
   async processRefund(sagaId: string, correlationId: string): Promise<void> {

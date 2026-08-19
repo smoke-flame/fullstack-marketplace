@@ -156,19 +156,9 @@ export class OrderSagaOrchestrator implements OnModuleInit {
 
     this.clearTimeout(orderId);
     const order = await this.orderRepo.findById(orderId);
-    if (!order || order.status !== 'PAID') return;
+    if (!order || order.status !== 'COMPLETED') return;
 
-    await this.orderRepo.updateStatus(orderId, 'COMPLETED');
     await this.clearPending(orderId);
-
-    await this.publisher.publish(new OrderCompletedEvent({
-      orderId,
-      buyerId: order.buyerId,
-      items: order.items.map((item: OrderItem) => ({
-        productId: item.productId,
-        qty: item.qty,
-      })),
-    }, pending.correlationId));
   }
 
   async handleStepTimeout(orderId: string): Promise<void> {

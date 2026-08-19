@@ -13,7 +13,7 @@ export class PaymentConsumer {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly idempotency: EventIdempotencyService,
-  ) {}
+  ) { }
 
   @EventPattern(RabbitMQCommandType.PAYMENT_CHARGE)
   async onPaymentCharge(@Payload() event: PaymentChargeCommand & { eventId: string }, @Ctx() context: RmqContext) {
@@ -21,21 +21,23 @@ export class PaymentConsumer {
     const channel = context.getChannelRef();
     const originalMessage = context.getMessage();
     try {
-      if (!await this.idempotency.claim('payment', event.eventId, RabbitMQCommandType.PAYMENT_CHARGE)) {
-        await channel.ack(originalMessage);
+      if (await this.idempotency.isProcessed('payment', event.eventId)) {
+        await this.idempotency.ack(channel, originalMessage);
         return;
       }
+
       await this.paymentService.processCharge(
         event.payload.sagaId,
         event.payload.amount,
         event.payload.buyerId,
         event.correlationId,
       );
-      await channel.ack(originalMessage);
+      await this.idempotency.markProcessed('payment', event.eventId, RabbitMQCommandType.PAYMENT_CHARGE);
+      await this.idempotency.ack(channel, originalMessage);
     } catch (error) {
-      await this.idempotency.releaseClaim('payment', event.eventId);
+      // do not release claim here; we didn't claim up-front in this safer flow
       this.logger.error(`Payment charge failed for saga ${event.payload.sagaId}: ${error}`);
-      await channel.nack(originalMessage, false, true);
+      await this.idempotency.nack(channel, originalMessage, true);
     }
   }
 
@@ -45,16 +47,18 @@ export class PaymentConsumer {
     const channel = context.getChannelRef();
     const originalMessage = context.getMessage();
     try {
-      if (!await this.idempotency.claim('payment', event.eventId, RabbitMQCommandType.PAYMENT_REFUND)) {
-        await channel.ack(originalMessage);
+      if (await this.idempotency.isProcessed('payment', event.eventId)) {
+        await this.idempotency.ack(channel, originalMessage);
         return;
       }
+
       await this.paymentService.processRefund(event.payload.sagaId, event.correlationId);
-      await channel.ack(originalMessage);
+      await this.idempotency.markProcessed('payment', event.eventId, RabbitMQCommandType.PAYMENT_REFUND);
+      await this.idempotency.ack(channel, originalMessage);
     } catch (error) {
-      await this.idempotency.releaseClaim('payment', event.eventId);
+      // do not release claim here; we didn't claim up-front in this safer flow
       this.logger.error(`Payment refund failed for saga ${event.payload.sagaId}: ${error}`);
-      await channel.nack(originalMessage, false, true);
+      await this.idempotency.nack(channel, originalMessage, true);
     }
   }
 }

@@ -10,7 +10,7 @@ export class OrderConsumer {
   constructor(
     private readonly sagaOrchestrator: OrderSagaOrchestrator,
     private readonly idempotency: EventIdempotencyService,
-  ) {}
+  ) { }
 
   @EventPattern(RabbitMQEventType.ORDER_CREATED)
   async onOrderCreated(
@@ -60,16 +60,18 @@ export class OrderConsumer {
     const channel = context.getChannelRef();
     const message = context.getMessage();
     try {
-      if (!await this.idempotency.claim('orders', eventId, eventType)) {
-        await channel.ack(message);
+      if (await this.idempotency.isProcessed('orders', eventId)) {
+        await this.idempotency.ack(channel, message);
         return;
       }
+
       await work();
-      await channel.ack(message);
+      await this.idempotency.markProcessed('orders', eventId, eventType);
+      await this.idempotency.ack(channel, message);
     } catch (error) {
-      await this.idempotency.releaseClaim('orders', eventId);
+      // do not release claim here; we didn't claim up-front in this safer flow
       this.logger.error(`Order event handling failed: ${error}`);
-      await channel.nack(message, false, true);
+      await this.idempotency.nack(channel, message, true);
     }
   }
 }

@@ -24,6 +24,8 @@ const schema = z.object({
   PAYMENT_FAILURE_PROBABILITY: z.coerce.number().min(0).max(1).default(0.2),
   PAYMENT_MIN_DELAY_MS: z.coerce.number().int().positive().default(1000),
   PAYMENT_MAX_DELAY_MS: z.coerce.number().int().positive().default(5000),
+  PAYMENT_MAX_RETRIES: z.coerce.number().int().positive().default(5),
+  PAYMENT_RETRY_BASE_DELAY_MS: z.coerce.number().int().positive().default(1000),
   NOTIFICATION_FAILURE_PROBABILITY: z.coerce.number().min(0).max(1).default(0),
   NOTIFICATION_MAX_RETRIES: z.coerce.number().int().positive().default(5),
   NOTIFICATION_RETRY_BASE_DELAY_MS: z.coerce.number().int().positive().default(1000),

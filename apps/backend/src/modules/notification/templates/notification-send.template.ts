@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { RabbitMQCommandType } from '@modules/rabbitmq/rabbitmq.constants';
 import { NotificationTemplate } from './notification.template';
 import type { NotificationSendCommand } from '@marketplace/contracts/events/commands';
 
@@ -6,7 +7,7 @@ import type { NotificationSendCommand } from '@marketplace/contracts/events/comm
 export class NotificationSendTemplate implements NotificationTemplate<NotificationSendCommand> {
   render(payload: NotificationSendCommand) {
     const message = {
-      type: 'notification.send',
+      type: RabbitMQCommandType.NOTIFICATION_SEND,
       to: `user-${payload.userId}@marketplace.local`,
       subject: 'Order Update',
       body: `Notification for order ${payload.orderId}`,

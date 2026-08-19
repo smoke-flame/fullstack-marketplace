@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@modules/prisma/prisma.service';
+import type { Channel, Message } from 'amqplib';
 
 @Injectable()
 export class EventIdempotencyService {
   private readonly logger = new Logger(EventIdempotencyService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async isProcessed(consumer: string, eventId: string): Promise<boolean> {
     return Boolean(await this.prisma.processedEvent.findUnique({
@@ -20,11 +21,6 @@ export class EventIdempotencyService {
     });
   }
 
-  /**
-   * Claims an irreversible side effect (for example an email) before it is
-   * performed.  The composite primary key makes concurrent deliveries race
-   * safely: exactly one handler receives the claim.
-   */
   async claim(consumer: string, eventId: string, eventType: string): Promise<boolean> {
     try {
       await this.prisma.processedEvent.create({ data: { consumer, eventId, eventType } });
@@ -37,5 +33,19 @@ export class EventIdempotencyService {
 
   async releaseClaim(consumer: string, eventId: string): Promise<void> {
     await this.prisma.processedEvent.deleteMany({ where: { consumer, eventId } });
+  }
+
+  private readonly acknowledged = new WeakSet<object>();
+
+  async ack(channel: Channel, message: object): Promise<void> {
+    if (this.acknowledged.has(message)) return;
+    this.acknowledged.add(message);
+    channel.ack(message as Message);
+  }
+
+  async nack(channel: Channel, message: object, requeue: boolean): Promise<void> {
+    if (this.acknowledged.has(message)) return;
+    this.acknowledged.add(message);
+    channel.nack(message as Message, false, requeue);
   }
 }

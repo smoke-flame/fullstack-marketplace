@@ -11,24 +11,25 @@ export class ReviewsConsumer {
   constructor(
     private readonly reviewsService: ReviewsService,
     private readonly idempotency: EventIdempotencyService,
-  ) {}
+  ) { }
 
   @EventPattern('order.completed')
   async onOrderCompleted(@Payload() event: OrderCompletedEvent, @Ctx() context: RmqContext) {
     this.logger.log(`Consumed order.completed [${event.correlationId}] for order ${event.payload.orderId}`);
     try {
-      if (!await this.idempotency.claim('reviews', event.eventId, 'order.completed')) {
-        await context.getChannelRef().ack(context.getMessage());
+      if (await this.idempotency.isProcessed('reviews', event.eventId)) {
+        await this.idempotency.ack(context.getChannelRef(), context.getMessage());
         return;
       }
       for (const item of event.payload.items) {
         await this.reviewsService.onOrderCompleted(item.productId, event.payload.buyerId, event.payload.orderId);
       }
-      await context.getChannelRef().ack(context.getMessage());
+      await this.idempotency.markProcessed('reviews', event.eventId, 'order.completed');
+      await this.idempotency.ack(context.getChannelRef(), context.getMessage());
     } catch (error) {
-      await this.idempotency.releaseClaim('reviews', event.eventId);
+      // do not release claim here; using markProcessed after successful work
       this.logger.error(`Failed to record purchase for order ${event.payload.orderId}: ${error}`);
-      await context.getChannelRef().nack(context.getMessage(), false, true);
+      await this.idempotency.nack(context.getChannelRef(), context.getMessage(), true);
     }
   }
 }

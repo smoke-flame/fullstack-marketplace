@@ -22,10 +22,12 @@ import {
   RABBITMQ_PAYMENT_REFUNDED_CLIENT,
   RABBITMQ_DLQ_CLIENT,
   RABBITMQ_DLQ_REPLAY_CLIENT,
+  RABBITMQ_PAYMENT_DLQ_CLIENT,
   RabbitMQEventType,
   RabbitMQCommandType,
   DLQ_NAME,
   DLQ_REPLAY_NAME,
+  PAYMENT_DLQ_NAME,
 } from './rabbitmq.constants'
 import { lastValueFrom } from 'rxjs';
 import { RabbitmqClientNotFoundException } from '@modules/common/errors/rabbitmq-errors';
@@ -56,6 +58,7 @@ export class EventPublisher {
     @Inject(RABBITMQ_PAYMENT_REFUNDED_CLIENT) paymentRefundedClient: ClientProxy,
     @Inject(RABBITMQ_DLQ_CLIENT) dlqClient: ClientProxy,
     @Inject(RABBITMQ_DLQ_REPLAY_CLIENT) dlqReplayClient: ClientProxy,
+    @Inject(RABBITMQ_PAYMENT_DLQ_CLIENT) paymentDlqClient: ClientProxy,
   ) {
     this.clients = new Map([
       [RabbitMQEventType.USER_CREATED, userCreatedClient],
@@ -78,6 +81,7 @@ export class EventPublisher {
       [RabbitMQCommandType.NOTIFICATION_SEND, notificationSendClient],
       [DLQ_NAME, dlqClient],
       [DLQ_REPLAY_NAME, dlqReplayClient],
+      [PAYMENT_DLQ_NAME, paymentDlqClient],
     ] as [string, ClientProxy][]);
   }
 

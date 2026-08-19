@@ -1,20 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventPublisher } from '@modules/rabbitmq/event-publisher';
 import { RabbitMQEventType, RabbitMQCommandType } from '@modules/rabbitmq/rabbitmq.constants';
+import { DlqEvent } from '@modules/rabbitmq/dlq.event';
 import { env } from '@config/env';
 import { UserCreatedTemplate } from './templates/user-created.template';
 import { OrderCompletedTemplate } from './templates/order-completed.template';
 import { OrderCancelledTemplate } from './templates/order-cancelled.template';
 import { NotificationSendTemplate } from './templates/notification-send.template';
-import { DlqEvent } from './events/dlq.event';
-import { UserCreatedEvent, type UserCreatedPayload } from '@modules/auth/events/user-created.event';
-import { OrderCompletedEvent } from '../orders/events/order.completed.event';
-import { OrderCancelledEvent } from '../orders/events/order.cancelled.event';
-import type { OrderCancelledPayload } from '@marketplace/contracts/events/order/order-events';
-import { NotificationSendCommand } from '../orders/commands/notification-send.command';
 import { NotificationSentEvent } from './events/notification-sent.event';
-import type { OrderCompletedPayload } from '@marketplace/contracts/events/order/order-events';
-import type { NotificationSendCommand as NotificationSendCommandPayload } from '@marketplace/contracts/events/commands';
 
 interface NotificationMessage {
   type: string;
@@ -51,22 +44,22 @@ export class NotificationService {
 
   async sendWelcomeEmail(payload: { userId: string; email: string; roles: string[] }, correlationId: string): Promise<void> {
     const message = this.userCreatedTemplate.render(payload);
-    await this.sendWithRetry('user.registered', message, correlationId);
+    await this.sendWithRetry(RabbitMQEventType.USER_CREATED, message, correlationId);
   }
 
   async sendOrderCompleted(payload: { orderId: string; buyerId: string; items: Array<{ productId: string; qty: number }> }, correlationId: string): Promise<void> {
     const message = this.orderCompletedTemplate.render(payload);
-    await this.sendWithRetry('order.completed', message, correlationId);
+    await this.sendWithRetry(RabbitMQEventType.ORDER_COMPLETED, message, correlationId);
   }
 
   async sendOrderCancelled(payload: { orderId: string; buyerId: string; reason: string }, correlationId: string): Promise<void> {
     const message = this.orderCancelledTemplate.render(payload);
-    await this.sendWithRetry('order.cancelled', message, correlationId);
+    await this.sendWithRetry(RabbitMQEventType.ORDER_CANCELLED, message, correlationId);
   }
 
   async sendNotificationCommand(payload: { orderId: string; userId: string }, correlationId: string): Promise<void> {
     const message = this.notificationSendTemplate.render(payload);
-    const sent = await this.sendWithRetry('notification.send', message, correlationId);
+    const sent = await this.sendWithRetry(RabbitMQCommandType.NOTIFICATION_SEND, message, correlationId);
     if (sent) {
       await this.publisher.publish(new NotificationSentEvent({ orderId: payload.orderId }, correlationId));
     }
@@ -106,49 +99,15 @@ export class NotificationService {
   }
 
   async publishToDlq(eventType: string, message: NotificationMessage, reason: string, correlationId: string): Promise<void> {
-    const dlqMessage = {
-      ...message,
+    // store the full message as the original payload so replay can reconstruct the original command
+    await this.publisher.publish(new DlqEvent({
       originalEventType: eventType,
-      failedAt: new Date().toISOString(),
+      originalPayload: message,
       reason,
+      failedAt: new Date().toISOString(),
       correlationId,
-    };
-    await this.publisher.publish(new DlqEvent(dlqMessage, ''));
-    this.logger.error(`Published to DLQ [${correlationId}]: ${JSON.stringify(dlqMessage)}`);
-  }
-
-  async getDlqMessages(): Promise<Record<string, unknown>[]> {
-    return [];
-  }
-
-  async replayDlqMessage(message: Record<string, unknown>): Promise<void> {
-    const eventType = message.originalEventType || message.type;
-    const payload = message.meta || message.payload;
-
-    if (!eventType || !payload) {
-      throw new Error('DLQ message missing originalEventType or payload');
-    }
-
-    switch (eventType) {
-      case RabbitMQEventType.USER_CREATED:
-      case 'user.registered':
-        await this.publisher.publish(new UserCreatedEvent(payload as unknown as UserCreatedPayload, ''));
-        break;
-      case RabbitMQEventType.ORDER_COMPLETED:
-      case 'order.completed':
-        await this.publisher.publish(new OrderCompletedEvent(payload as unknown as OrderCompletedPayload, ''));
-        break;
-      case RabbitMQEventType.ORDER_CANCELLED:
-      case 'order.cancelled':
-        await this.publisher.publish(new OrderCancelledEvent(payload as unknown as OrderCancelledPayload, ''));
-        break;
-      case RabbitMQCommandType.NOTIFICATION_SEND:
-      case 'notification.send':
-        await this.publisher.publish(new NotificationSendCommand(payload as unknown as NotificationSendCommandPayload, ''));
-        break;
-      default:
-        this.logger.warn(`Unknown event type in DLQ: ${eventType}`);
-    }
+    }, correlationId));
+    this.logger.error(`Published to DLQ [${correlationId}]: ${eventType} (${reason})`);
   }
 
   private calculateBackoff(attempt: number): number {

@@ -1,6 +1,9 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module, forwardRef } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { EventPublisher } from './event-publisher';
+import { DlqController } from './dlq.controller';
+import { NotificationModule } from '@modules/notification/notification.module';
+import { PaymentModule } from '@modules/payment/payment.module';
 import {
   RabbitMQEventType,
   RabbitMQCommandType,
@@ -27,12 +30,16 @@ import {
   RABBITMQ_REVIEW_DELETED_CLIENT,
   RABBITMQ_DLQ_CLIENT,
   RABBITMQ_DLQ_REPLAY_CLIENT,
+  RABBITMQ_PAYMENT_DLQ_CLIENT,
   DLQ_NAME,
+  PAYMENT_DLQ_NAME,
 } from './rabbitmq.constants';
 
 @Global()
 @Module({
   imports: [
+    forwardRef(() => NotificationModule),
+    forwardRef(() => PaymentModule),
     ClientsModule.register([
       {
         name: RABBITMQ_USER_CREATED_CLIENT,
@@ -122,11 +129,14 @@ import {
         name: RABBITMQ_DLQ_REPLAY_CLIENT,
         ...createRmqOptions('notification.dlq.replay'),
       },
+      {
+        name: RABBITMQ_PAYMENT_DLQ_CLIENT,
+        ...createRmqOptions(PAYMENT_DLQ_NAME),
+      },
     ]),
   ],
-  providers: [
-    EventPublisher,
-  ],
+  providers: [EventPublisher],
+  controllers: [DlqController],
   exports: [EventPublisher],
 })
 export class RabbitmqModule { }

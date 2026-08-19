@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PaymentController } from './payment.controller';
 import { PaymentConsumer } from './payment.consumer';
@@ -6,15 +6,17 @@ import { PrismaPaymentRepository } from './repositories/payment.repository.prism
 import { PAYMENT_REPOSITORY } from './repositories/payment.repository';
 import { PrismaModule } from '@modules/prisma/prisma.module';
 import { RabbitmqModule } from '@modules/rabbitmq/rabbitmq.module';
+import { PaymentDlqService } from './payment.dlq';
 
 @Module({
-  imports: [PrismaModule, RabbitmqModule],
+  imports: [PrismaModule, forwardRef(() => RabbitmqModule)],
   providers: [
     PaymentService,
+    PaymentDlqService,
     PrismaPaymentRepository,
     { provide: PAYMENT_REPOSITORY, useClass: PrismaPaymentRepository },
   ],
   controllers: [PaymentController, PaymentConsumer],
-  exports: [PaymentService],
+  exports: [PaymentService, PaymentDlqService],
 })
-export class PaymentModule {}
+export class PaymentModule { }
