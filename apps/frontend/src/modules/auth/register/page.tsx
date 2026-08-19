@@ -36,11 +36,15 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isValid, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerFormSchema),
-    mode: 'onBlur',
+    mode: 'onChange',
   });
+  const watched = watch();
+  const allFilled = !!(watched?.email && watched?.password && watched?.confirmPassword);
+  const canSubmit = allFilled && Object.keys(errors || {}).length === 0;
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -56,54 +60,57 @@ export function RegisterPage() {
   return (
     <GuestOnly>
       <div className="grid min-h-screen place-items-center p-8">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Create an account</h1>
-          <p className="text-muted-foreground">Join the Marketplace</p>
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Create an account</h1>
+            <p className="text-muted-foreground">Join the Marketplace</p>
+          </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                data-test-id="register-email"
+                type="email"
+                isInvalid={!!errors.email}
+                {...register('email')}
+              />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                data-test-id="register-password"
+                type="password"
+                isInvalid={!!errors.password}
+                {...register('password')}
+              />
+              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                data-test-id="register-confirm"
+                type="password"
+                isInvalid={!!errors.confirmPassword}
+                {...register('confirmPassword')}
+              />
+              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" data-test-id="register-seller-checkbox" checked={isSeller} onChange={(e) => setIsSeller(e.target.checked)} />
+              I also want to sell items
+            </label>
+            <Button type="submit" data-test-id="register-submit" className="w-full" disabled={!canSubmit || isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Sign up'}
+            </Button>
+          </form>
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account? <Link href="/login" className="text-primary underline">Sign in</Link>
+          </p>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              isInvalid={!!errors.email}
-              {...register('email')}
-            />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              isInvalid={!!errors.password}
-              {...register('password')}
-            />
-            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              isInvalid={!!errors.confirmPassword}
-              {...register('confirmPassword')}
-            />
-            {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
-          </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={isSeller} onChange={(e) => setIsSeller(e.target.checked)} />
-            I also want to sell items
-          </label>
-          <Button type="submit" className="w-full" disabled={!isValid || isSubmitting}>
-            {isSubmitting ? 'Creating account...' : 'Sign up'}
-          </Button>
-        </form>
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account? <Link href="/login" className="text-primary underline">Sign in</Link>
-        </p>
-      </div>
       </div>
     </GuestOnly>
   );

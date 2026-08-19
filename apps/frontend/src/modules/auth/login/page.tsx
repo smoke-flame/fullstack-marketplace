@@ -21,11 +21,15 @@ export function LoginPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isValid, isSubmitting },
   } = useForm<LoginUserRequest>({
     resolver: zodResolver(loginUserRequestSchema),
-    mode: 'onBlur',
+    mode: 'onTouched',
   });
+  const watched = watch();
+  const allFilled = !!(watched?.email && watched?.password);
+  const canSubmit = allFilled && Object.keys(errors || {}).length === 0;
 
   const onSubmit = async (data: LoginUserRequest) => {
     try {
@@ -50,40 +54,42 @@ export function LoginPage() {
   return (
     <GuestOnly>
       <div className="grid min-h-screen place-items-center p-8">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Sign in</h1>
-          <p className="text-muted-foreground">Welcome back to Marketplace</p>
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Sign in</h1>
+            <p className="text-muted-foreground">Welcome back to Marketplace</p>
+          </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                data-test-id="login-email"
+                type="email"
+                isInvalid={!!errors.email}
+                {...register('email')}
+              />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                data-test-id="login-password"
+                type="password"
+                isInvalid={!!errors.password}
+                {...register('password')}
+              />
+              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+            </div>
+            <Button type="submit" data-test-id="login-submit" className="w-full" disabled={!canSubmit || isSubmitting}>
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
+            </Button>
+          </form>
+          <p className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account? <Link href="/register" className="text-primary underline">Sign up</Link>
+          </p>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              isInvalid={!!errors.email}
-              {...register('email')}
-            />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              isInvalid={!!errors.password}
-              {...register('password')}
-            />
-            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-          </div>
-          <Button type="submit" className="w-full" disabled={!isValid || isSubmitting}>
-            {isSubmitting ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account? <Link href="/register" className="text-primary underline">Sign up</Link>
-        </p>
-      </div>
       </div>
     </GuestOnly>
   );

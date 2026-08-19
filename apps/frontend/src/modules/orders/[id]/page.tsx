@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/shared/ui/button';
@@ -26,6 +26,47 @@ export function OrderDetailPage() {
   useEffect(() => {
     if (order) return;
     getOrderById(id).then(setOrder).catch(() => { });
+  }, [id, order]);
+
+  // Poll order status every 2s until terminal (COMPLETED / CANCELLED / FAILED / PAID)
+  const pollRef = useRef<number | null>(null);
+  useEffect(() => {
+    const orderId = id;
+    const isTerminal = (status?: string) => {
+      if (!status) return false;
+      return ['COMPLETED', 'CANCELLED', 'FAILED', 'PAID'].includes(status);
+    };
+
+    if (!order) return undefined;
+    if (isTerminal(order.status)) return undefined;
+
+    const POLL_MS = 2000;
+    const start = () => {
+      if (pollRef.current) return;
+      pollRef.current = window.setInterval(async () => {
+        try {
+          const updated = await getOrderById(orderId);
+          if (updated) setOrder(updated);
+          if (isTerminal(updated?.status)) {
+            if (pollRef.current) {
+              clearInterval(pollRef.current);
+              pollRef.current = null;
+            }
+          }
+        } catch {
+          // ignore transient errors; will retry until terminal
+        }
+      }, POLL_MS) as unknown as number;
+    };
+
+    start();
+
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
   }, [id, order]);
 
   const handleCancel = async () => {

@@ -37,7 +37,7 @@ export function InventoryPage() {
       const map = new Map<string, StockResponse>();
       stockData.forEach((s) => map.set(s.productId, s.stock));
       setStocks(map);
-    }).catch(() => {});
+    }).catch(() => { });
   }, [productsResult.data]);
 
   const {
@@ -89,7 +89,7 @@ export function InventoryPage() {
               const stock = stocks.get(product.id);
               const isEditing = editingId === product.id;
               return (
-                <tr key={product.id} className="border-b last:border-0">
+                <tr key={product.id} data-test-id={`inventory-row-${product.id}`} className="border-b last:border-0">
                   <td className="py-4">
                     <div>
                       <Link href={`/products/${product.id}`} className="font-medium hover:text-primary hover:underline">{product.title}</Link>
@@ -105,6 +105,7 @@ export function InventoryPage() {
                         <div className="space-y-1">
                           <Input
                             type="number"
+                            data-test-id="stock-onhand-input"
                             className="w-24"
                             {...register('onHand', { valueAsNumber: true })}
                           />
@@ -112,7 +113,7 @@ export function InventoryPage() {
                             <p className="text-xs text-destructive">{errors.onHand.message}</p>
                           )}
                         </div>
-                        <Button type="submit" size="sm" disabled={isSubmitting}>
+                        <Button data-test-id="save-stock" type="submit" size="sm" disabled={isSubmitting}>
                           Save
                         </Button>
                         <Button

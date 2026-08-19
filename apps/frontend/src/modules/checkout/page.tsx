@@ -90,7 +90,7 @@ export function CheckoutPage() {
           <span>Total</span>
           <span>${total}</span>
         </div>
-        <Button className="mt-6 w-full" size="lg" onClick={handlePay} disabled={paying || unavailableItems.length > 0}>
+        <Button data-test-id="checkout-pay" className="mt-6 w-full" size="lg" onClick={handlePay} disabled={paying || unavailableItems.length > 0}>
           {paying ? 'Processing payment...' : `Pay $${total}`}
         </Button>
       </div>

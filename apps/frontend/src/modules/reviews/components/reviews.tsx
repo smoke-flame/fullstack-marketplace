@@ -46,6 +46,7 @@ function StarRating({ value, onChange }: { value: number; onChange?: (value: num
             type="button"
             role="radio"
             aria-label={`${star} star${star !== 1 ? 's' : ''}`}
+            data-test-id={`star-${star}`}
             aria-checked={value === star}
             className="rounded p-0.5 text-2xl transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary"
             onClick={() => onChange(star)}
@@ -60,10 +61,11 @@ function StarRating({ value, onChange }: { value: number; onChange?: (value: num
 
 interface RatingDisplayProps {
   productId: string;
+  refreshVersion?: number;
 }
 
-export function RatingDisplay({ productId }: RatingDisplayProps) {
-  const { data: rating, loading } = useAsync(() => getRating(productId), [productId]);
+export function RatingDisplay({ productId, refreshVersion }: RatingDisplayProps) {
+  const { data: rating, loading } = useAsync(() => getRating(productId), [productId, refreshVersion]);
 
   if (loading) {
     return <div className="text-sm text-muted-foreground">Loading rating...</div>;
@@ -76,7 +78,7 @@ export function RatingDisplay({ productId }: RatingDisplayProps) {
   return (
     <div className="flex items-center gap-2">
       <StarRating value={rating.avg} />
-      <span className="text-sm font-medium">{rating.avg.toFixed(1)}</span>
+      <span data-test-id="rating-value" className="text-sm font-medium">{rating.avg.toFixed(1)}</span>
       <span className="text-sm text-muted-foreground">({rating.count} review{rating.count !== 1 ? 's' : ''})</span>
     </div>
   );
@@ -133,12 +135,13 @@ export function ReviewForm({ productId, onReviewCreated }: ReviewFormProps) {
         <Label htmlFor="text">Review (optional)</Label>
         <Input
           id="text"
+          data-test-id="review-text"
           isInvalid={!!errors.text}
           {...register('text')}
         />
         {errors.text && <p className="text-sm text-destructive">{errors.text.message}</p>}
       </div>
-      <Button type="submit" disabled={isSubmitting || submitting}>
+      <Button data-test-id="submit-review" type="submit" disabled={isSubmitting || submitting}>
         {isSubmitting || submitting ? 'Submitting...' : 'Submit Review'}
       </Button>
     </form>

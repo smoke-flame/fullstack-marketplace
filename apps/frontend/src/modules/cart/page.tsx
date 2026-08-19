@@ -139,7 +139,7 @@ export function CartPage() {
             {items.some((item) => item.unavailable) ? (
               <Button size="lg" disabled>Remove unavailable items to checkout</Button>
             ) : (
-              <Link href="/checkout"><Button size="lg">Proceed to checkout</Button></Link>
+              <Link href="/checkout"><Button data-test-id="proceed-to-checkout" size="lg">Proceed to checkout</Button></Link>
             )}
           </div>
         </div>

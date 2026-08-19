@@ -87,10 +87,11 @@ export class PrismaReviewRepository implements ReviewRepository {
     }
 
     const avg = Number(Number(row.avg).toFixed(1));
+    const count = Number(row.count);
     const rating = await this.prisma.productRating.upsert({
       where: { productId },
-      create: { productId, avgRating: avg, reviewCount: row.count },
-      update: { avgRating: avg, reviewCount: row.count },
+      create: { productId, avgRating: avg, reviewCount: count },
+      update: { avgRating: avg, reviewCount: count },
     });
 
     return { avg: Number(rating.avgRating), count: rating.reviewCount };

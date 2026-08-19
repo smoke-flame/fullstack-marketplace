@@ -28,7 +28,7 @@ export function OrdersPage() {
           <p className="text-muted-foreground">No orders yet.</p>
         ) : (
           orders.map((order) => (
-            <Link key={order.id} href={`/orders/${order.id}`} className="block">
+            <Link data-test-id={`order-link-${order.id}`} key={order.id} href={`/orders/${order.id}`} className="block">
               <div className="rounded-lg border p-4 transition-colors hover:bg-muted/50">
                 <div className="flex items-center justify-between">
                   <div>
@@ -39,10 +39,10 @@ export function OrdersPage() {
                     </p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-medium ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                      order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'PAID' ? 'bg-green-100 text-green-800' :
-                          order.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
-                            'bg-red-100 text-red-800'
+                    order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
+                      order.status === 'PAID' ? 'bg-green-100 text-green-800' :
+                        order.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                          'bg-red-100 text-red-800'
                     }`}>
                     {order.status}
                   </span>

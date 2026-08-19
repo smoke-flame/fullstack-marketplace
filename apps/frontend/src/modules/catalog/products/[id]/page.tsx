@@ -135,7 +135,7 @@ export function ProductDetailPage() {
                 onChange={(e) => setQty(parseInt(e.target.value, 10) || 1)}
               />
             </div>
-            <Button className="w-full" onClick={handleAddToCart} disabled={adding}>
+            <Button data-test-id="add-to-cart" className="w-full" onClick={handleAddToCart} disabled={adding}>
               {adding ? 'Adding...' : 'Add to Cart'}
             </Button>
           </div>
@@ -183,7 +183,7 @@ export function ProductDetailPage() {
       )}
       <section className="mt-10 border-t pt-8">
         <h2 className="text-2xl font-semibold">Reviews</h2>
-        <div className="mt-4"><RatingDisplay productId={id} /></div>
+        <div className="mt-4"><RatingDisplay productId={id} refreshVersion={reviewsVersion} /></div>
         <ReviewList key={reviewsVersion} productId={id} currentUserId={user?.id} onReviewDeleted={() => setReviewsVersion((version) => version + 1)} />
         {user && <ReviewForm productId={id} onReviewCreated={() => setReviewsVersion((version) => version + 1)} />}
       </section>

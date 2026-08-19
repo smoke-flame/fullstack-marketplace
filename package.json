@@ -2,7 +2,10 @@
   "name": "marketplace",
   "private": true,
   "packageManager": "pnpm@9.15.4",
-  "engines": { "node": "22.x", "pnpm": ">=9" },
+  "engines": {
+    "node": "22.x",
+    "pnpm": ">=9"
+  },
   "scripts": {
     "dev": "pnpm --filter @marketplace/contracts build && pnpm --parallel --filter @marketplace/backend --filter @marketplace/frontend dev",
     "build": "pnpm -r build",
@@ -10,7 +13,17 @@
     "format": "prettier --write .",
     "db:generate": "pnpm --filter @marketplace/backend prisma:generate",
     "db:migrate": "pnpm --filter @marketplace/backend prisma:migrate",
-    "db:seed": "pnpm --filter @marketplace/backend prisma:seed"
+    "db:seed": "pnpm --filter @marketplace/backend prisma:seed",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run --config video=false",
+    "test:e2e:cypress": "pnpm cypress:run"
   },
-  "devDependencies": { "prettier": "^3.4.2", "typescript": "^5.7.2" }
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "ts-node": "^10.9.1",
+    "axios": "^1.7.0",
+    "uuid": "^9.0.0",
+    "cypress": "^15.21.0"
+  }
 }

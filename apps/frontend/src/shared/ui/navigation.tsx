@@ -56,6 +56,7 @@ export function Navigation() {
               <Link
                 key={link.href}
                 href={link.href}
+                data-test-id={link.href === '/inventory' ? 'nav-inventory' : link.href === '/cart' ? 'nav-cart' : link.href === '/search' ? 'nav-search' : undefined}
                 className={`rounded-md px-3 py-2 text-sm transition-colors hover:bg-muted ${active ? 'bg-muted font-medium' : 'text-muted-foreground'}`}
                 onClick={() => setMenuOpen(false)}
               >
@@ -67,7 +68,7 @@ export function Navigation() {
         {user ? (
           <div className="flex items-center gap-3">
             <span className="hidden max-w-48 truncate text-sm text-muted-foreground sm:inline">{user.email}</span>
-            <Button variant="secondary" size="sm" onClick={handleLogout}>Log out</Button>
+            <Button data-test-id="nav-logout" variant="secondary" size="sm" onClick={handleLogout}>Log out</Button>
           </div>
         ) : (
           <div className="flex items-center gap-2">
