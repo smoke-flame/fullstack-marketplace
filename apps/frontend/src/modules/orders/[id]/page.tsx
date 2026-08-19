@@ -8,12 +8,15 @@ import { toast } from '@/shared/ui/toast';
 import { getOrderById, cancelOrder } from '@/modules/orders/api';
 import type { OrderResponse } from '@marketplace/contracts/api/orders/orders';
 import { useAsync } from '@/shared/hooks';
+import { getProductById } from '@/modules/catalog/api';
+import { useAppSelector } from '@/shared/hooks';
 
 export function OrderDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [order, setOrder] = useState<OrderResponse | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const currentUserId = useAppSelector((s) => s.user.user?.id ?? null);
 
   const { loading } = useAsync(
     () => getOrderById(id),
@@ -22,7 +25,7 @@ export function OrderDetailPage() {
 
   useEffect(() => {
     if (order) return;
-    getOrderById(id).then(setOrder).catch(() => {});
+    getOrderById(id).then(setOrder).catch(() => { });
   }, [id, order]);
 
   const handleCancel = async () => {
@@ -52,7 +55,8 @@ export function OrderDetailPage() {
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
       <Link href="/orders" className="text-sm text-muted-foreground hover:underline">&larr; Back to orders</Link>
-      <h1 className="mt-4 text-3xl font-bold">Order {order.id}</h1>
+      <h1 className="mt-4 text-3xl font-bold">Order</h1>
+      <p className="text-sm text-muted-foreground">Created: {new Date(order.createdAt).toLocaleString()}</p>
 
       <div className="mt-8 grid gap-6">
         <div className="rounded-lg border p-6">
@@ -67,8 +71,8 @@ export function OrderDetailPage() {
               <p className="font-medium">${order.totalAmount}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Buyer ID</p>
-              <p className="font-mono text-sm">{order.buyerId}</p>
+              <p className="text-sm text-muted-foreground">Buyer</p>
+              <p className="font-medium">{currentUserId === order.buyerId ? 'You' : 'Customer'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Created At</p>
@@ -82,7 +86,7 @@ export function OrderDetailPage() {
           <ul className="mt-4 space-y-2">
             {order.items.map((item, idx) => (
               <li key={idx} className="flex items-center justify-between rounded border p-3">
-                <span className="font-mono text-sm">{item.productId}</span>
+                <ProductTitle productId={item.productId} />
                 <span className="text-sm">Qty: {item.qty}</span>
                 <span className="text-sm font-medium">${item.price}</span>
               </li>
@@ -115,4 +119,10 @@ export function OrderDetailPage() {
       </div>
     </div>
   );
+}
+
+function ProductTitle({ productId }: { productId: string }) {
+  const { data: product, loading } = useAsync(() => getProductById(productId), [productId]);
+  if (loading) return <span className="text-sm text-muted-foreground">Loading...</span>;
+  return <span className="font-medium">{product?.title ?? 'Product'}</span>;
 }

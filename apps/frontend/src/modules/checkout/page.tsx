@@ -63,12 +63,11 @@ export function CheckoutPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-3xl font-bold">Checkout</h1>
-      <p className="mt-2 text-muted-foreground">Review your cafe bill and complete the mock payment.</p>
+
 
       <div className="mt-8 rounded-xl border bg-card p-6 shadow-sm">
         <div className="border-b pb-4 text-center">
-          <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Marketplace Cafe</p>
-          <h2 className="mt-2 text-xl font-semibold">Order bill</h2>
+          <h2 className="mt-2 text-xl font-semibold">Receipt</h2>
         </div>
         <div className="divide-y">
           {cart.items.map((item) => (

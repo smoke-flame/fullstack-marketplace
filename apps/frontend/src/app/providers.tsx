@@ -5,8 +5,8 @@ import { store } from '@/store';
 import { useAppDispatch } from '@/shared/hooks';
 import { logout, setCredentials, setInitialized, setLoading } from '@/modules/auth/userSlice';
 import { registerRefreshHandler } from '@/modules/auth/refreshSync';
-import { clearTokens, getAccessToken, getRefreshToken } from '@/modules/auth/auth';
-import { getMe } from '@/modules/auth/api';
+import { clearTokens, getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from '@/modules/auth/auth';
+import { getMe, refreshTokens } from '@/modules/auth/api';
 import { useEffect } from 'react';
 
 function ReduxInit({ children }: { children: React.ReactNode }) {
@@ -24,8 +24,23 @@ function ReduxInit({ children }: { children: React.ReactNode }) {
           const user = await getMe();
           if (active) dispatch(setCredentials({ user, accessToken: getAccessToken() ?? token, refreshToken: getRefreshToken() ?? refreshToken ?? '' }));
         } catch {
-          clearTokens();
-          if (active) dispatch(logout());
+          // Attempt to refresh tokens if access token expired
+          const storedRefresh = getRefreshToken();
+          if (storedRefresh) {
+            try {
+              const refreshed = await refreshTokens({ refreshToken: storedRefresh });
+              setAccessToken(refreshed.accessToken);
+              setRefreshToken(refreshed.refreshToken);
+              const user = await getMe();
+              if (active) dispatch(setCredentials({ user, accessToken: refreshed.accessToken, refreshToken: refreshed.refreshToken }));
+            } catch {
+              clearTokens();
+              if (active) dispatch(logout());
+            }
+          } else {
+            clearTokens();
+            if (active) dispatch(logout());
+          }
         }
       }
       if (active) {

@@ -107,7 +107,7 @@ export function ReviewsPage() {
                       </div>
                       {review.text && <p className="mt-2 text-sm">{review.text}</p>}
                       <p className="mt-2 text-xs text-muted-foreground">
-                        Buyer: {review.buyerId.slice(0, 8)}... • {new Date(review.createdAt).toLocaleDateString()}
+                        Buyer: Customer • {new Date(review.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                     <Button

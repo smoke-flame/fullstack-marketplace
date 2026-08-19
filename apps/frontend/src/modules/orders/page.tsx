@@ -32,19 +32,18 @@ export function OrdersPage() {
               <div className="rounded-lg border p-4 transition-colors hover:bg-muted/50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-mono text-sm text-muted-foreground">{order.id}</p>
+                    <p className="text-sm text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</p>
                     <p className="font-semibold">Total: ${order.totalAmount}</p>
                     <p className="text-sm text-muted-foreground">
                       {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                    order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
-                    order.status === 'PAID' ? 'bg-green-100 text-green-800' :
-                    order.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`rounded-full px-3 py-1 text-xs font-medium ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                      order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'PAID' ? 'bg-green-100 text-green-800' :
+                          order.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                            'bg-red-100 text-red-800'
+                    }`}>
                     {order.status}
                   </span>
                 </div>

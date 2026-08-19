@@ -64,7 +64,7 @@ export function ProductDetailPage() {
     setCategoriesLoading(true);
     getAllCategories()
       .then(setCategories)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setCategoriesLoading(false));
   }, [editing, product, reset]);
 
@@ -111,15 +111,14 @@ export function ProductDetailPage() {
             <Button className="mt-4" variant="outline" onClick={() => setEditing(true)}>Edit product</Button>
           )}
           <p className="mt-4 text-4xl font-bold">${product.price}</p>
-          <span className={`mt-2 inline-block rounded-full px-2 py-1 text-xs font-medium ${
-            product.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-          }`}>
+          <span className={`mt-2 inline-block rounded-full px-2 py-1 text-xs font-medium ${product.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+            }`}>
             {product.status}
           </span>
           <p className="mt-6 text-muted-foreground">{product.description ?? 'No description provided.'}</p>
           <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-            <p>Seller: {product.sellerEmail ?? product.sellerId}</p>
-            <p>Category: {product.categoryTitle ?? product.categoryId}</p>
+            <p>Seller: {product.sellerEmail ?? 'Seller'}</p>
+            <p>Category: {product.categoryTitle ?? 'Uncategorized'}</p>
             <p>Updated: {new Date(product.updatedAt).toLocaleString()}</p>
           </div>
         </div>

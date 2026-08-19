@@ -191,7 +191,7 @@ export function ReviewList({ productId, currentUserId, onReviewDeleted }: Review
               </div>
               {review.text && <p className="mt-2 text-sm">{review.text}</p>}
               <p className="mt-2 text-xs text-muted-foreground">
-                Buyer: {review.buyerId.slice(0, 8)}... • {new Date(review.createdAt).toLocaleDateString()}
+                Buyer: {currentUserId === review.buyerId ? 'You' : 'Customer'} • {new Date(review.createdAt).toLocaleDateString()}
               </p>
             </div>
             {currentUserId === review.buyerId && (
