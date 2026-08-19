@@ -1,10 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { USER_REPOSITORY, UserRepository } from '@modules/users/user.repository';
 import { CategoryRepository, ProductRepository, CATEGORY_REPOSITORY, PRODUCT_REPOSITORY, type CategoryEntity, type ProductEntity } from './repositories/catalog.repository';
 import { CategoryNotFoundException, CategoryDepthExceededException, ProductNotFoundException, ProductForbiddenException } from '@modules/common/errors/catalog-errors';
 import { type CreateCategoryRequest } from '@marketplace/contracts/api/catalog/categories';
-import { type CreateProductRequest, type UpdateProductRequest, type BatchProductsRequest, type BatchProductsResponse, productResponseSchema } from '@marketplace/contracts/api/catalog/products';
+import { type CreateProductRequest, type UpdateProductRequest, type BatchProductsRequest, type BatchProductsResponse, productResponseSchema, type PaginatedProductsResponse } from '@marketplace/contracts/api/catalog/products';
 import type { ProductStatus } from '@marketplace/contracts/models';
+import { USER_REPOSITORY, UserRepository } from '@modules/users/user.repository';
 
 @Injectable()
 export class CatalogService {
@@ -52,6 +52,7 @@ export class CatalogService {
       title: data.title,
       description: data.description,
       price: data.price,
+      currency: data.currency ?? 'UAH',
     });
   }
 
@@ -83,8 +84,28 @@ export class CatalogService {
     status?: ProductStatus;
     cursor?: string;
     limit?: number;
-  }): Promise<ProductEntity[]> {
-    return this.productRepo.findAllProducts(filters);
+    offset?: number;
+  }): Promise<ProductEntity[] | PaginatedProductsResponse> {
+    const where: Record<string, unknown> = {};
+    if (filters?.categoryId) where.categoryId = filters.categoryId;
+    if (filters?.sellerId) where.sellerId = filters.sellerId;
+    if (filters?.status) where.status = filters.status;
+
+    const limit = filters?.limit ?? 20;
+    const offset = filters?.offset ?? 0;
+
+    const products = await this.productRepo.findAllProducts({
+      ...filters,
+      limit,
+      offset,
+    });
+
+    return {
+      items: products,
+      total: products.length,
+      limit,
+      offset,
+    };
   }
 
   async updateProduct(id: string, sellerId: string, data: UpdateProductRequest): Promise<ProductEntity> {
@@ -105,6 +126,7 @@ export class CatalogService {
       title: data.title,
       description: data.description,
       price: data.price,
+      currency: data.currency,
       categoryId: data.categoryId,
       status: data.status,
     });
@@ -133,6 +155,7 @@ export class CatalogService {
         title: p.title,
         description: p.description,
         price: p.price,
+        currency: p.currency,
         status: p.status,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAsync } from '@/shared/hooks';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -11,6 +11,7 @@ import type { CreateReviewRequest } from '@marketplace/contracts/models/review/r
 import { createReviewRequestSchema } from '@marketplace/contracts/models/review/review';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import type { PaginatedReviewsResponse } from '@marketplace/contracts/models/review/review';
 
 type StarFill = 'full' | 'half' | 'empty';
 
@@ -155,8 +156,18 @@ interface ReviewListProps {
 }
 
 export function ReviewList({ productId, currentUserId, onReviewDeleted }: ReviewListProps) {
-  const { data, loading } = useAsync(() => getReviews(productId), [productId]);
+  const [reviewsData, setReviewsData] = useState<PaginatedReviewsResponse | null>(null);
+  const [page, setPage] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const limit = 20;
+  const { data, loading } = useAsync(() => getReviews(productId, limit, page * limit), [productId, page]);
+
+  useEffect(() => {
+    if (data) setReviewsData(data);
+  }, [data]);
+
+  const totalPages = reviewsData ? Math.max(1, Math.ceil(reviewsData.total / limit)) : 1;
 
   const handleDelete = async (reviewId: string) => {
     setDeletingId(reviewId);
@@ -175,7 +186,7 @@ export function ReviewList({ productId, currentUserId, onReviewDeleted }: Review
     return <div className="mt-6 text-sm text-muted-foreground">Loading reviews...</div>;
   }
 
-  const reviews = data?.reviews ?? [];
+  const reviews = reviewsData?.items ?? [];
 
   if (reviews.length === 0) {
     return <div className="mt-6 text-sm text-muted-foreground">No reviews yet. Be the first to review!</div>;
@@ -210,6 +221,29 @@ export function ReviewList({ productId, currentUserId, onReviewDeleted }: Review
           </div>
         </div>
       ))}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0 || loading}
+            className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-muted-foreground">
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1 || loading}
+            className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

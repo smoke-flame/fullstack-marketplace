@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Put, Req, UseGuards } from '@nest
 import { CartService } from './cart.service';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
 import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
+import type { CartResponse } from '@marketplace/contracts/api/cart/cart';
 
 @Controller()
 export class CartController {
@@ -9,7 +10,7 @@ export class CartController {
 
   @Get('cart')
   @UseGuards(JwtGatewayGuard)
-  async getCart(@Req() request: GatewayRequest) {
+  async getCart(@Req() request: GatewayRequest): Promise<CartResponse> {
     return this.cartService.getCart(request.user!.id);
   }
 

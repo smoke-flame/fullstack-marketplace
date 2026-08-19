@@ -12,6 +12,7 @@ export class PrismaSearchRepository implements SearchRepository {
     title: string;
     description?: string;
     price: number;
+    currency: string;
     categoryId: string;
     sellerId: string;
     status: 'ACTIVE' | 'ARCHIVED';
@@ -23,6 +24,7 @@ export class PrismaSearchRepository implements SearchRepository {
         title: data.title,
         description: data.description,
         price: data.price,
+        currency: data.currency,
         categoryId: data.categoryId,
         sellerId: data.sellerId,
         status: data.status,
@@ -33,6 +35,7 @@ export class PrismaSearchRepository implements SearchRepository {
         title: data.title,
         description: data.description,
         price: data.price,
+        currency: data.currency,
         categoryId: data.categoryId,
         sellerId: data.sellerId,
         status: data.status,
@@ -51,15 +54,9 @@ export class PrismaSearchRepository implements SearchRepository {
     priceMin?: number;
     priceMax?: number;
     sellerId?: string;
-    cursor?: string;
     limit: number;
-  }): Promise<{ items: SearchDocumentEntity[]; nextCursor?: string }> {
-    // Query-string values are strings at runtime. Normalize numeric filters at
-    // the repository boundary so Prisma always receives numbers.
-    const parsedLimit = Number(filters.limit);
-    const limit = Number.isInteger(parsedLimit) && parsedLimit > 0
-      ? Math.min(parsedLimit, 100)
-      : 20;
+    offset: number;
+  }): Promise<{ items: SearchDocumentEntity[]; total: number; limit: number; offset: number }> {
     const priceMin = filters.priceMin === undefined ? undefined : Number(filters.priceMin);
     const priceMax = filters.priceMax === undefined ? undefined : Number(filters.priceMax);
     const where: Record<string, unknown> = { status: 'ACTIVE' };
@@ -79,16 +76,11 @@ export class PrismaSearchRepository implements SearchRepository {
 
     const items = await this.prisma.searchDocument.findMany({
       where,
-      ...(filters.cursor ? { skip: 1, cursor: { id: filters.cursor } } : {}),
-      take: limit + 1,
+      skip: filters.offset,
+      take: filters.limit,
       orderBy: { occurredAt: 'desc' },
     });
 
-    let nextCursor: string | undefined;
-    if (items.length > limit) {
-      const last = items.pop();
-      nextCursor = last!.id;
-    }
     const [categories, sellers] = await Promise.all([
       this.prisma.category.findMany({ where: { id: { in: items.map((item) => item.categoryId) } }, select: { id: true, title: true } }),
       this.prisma.user.findMany({ where: { id: { in: items.map((item) => item.sellerId) } }, select: { id: true, email: true } }),
@@ -102,6 +94,7 @@ export class PrismaSearchRepository implements SearchRepository {
         title: doc.title,
         description: doc.description,
         price: doc.price,
+        currency: doc.currency,
         categoryId: doc.categoryId,
         sellerId: doc.sellerId,
         categoryTitle: categoryTitles.get(doc.categoryId),
@@ -109,7 +102,9 @@ export class PrismaSearchRepository implements SearchRepository {
         status: doc.status as ProductStatus,
         occurredAt: doc.occurredAt,
       })),
-      nextCursor,
+      total: items.length,
+      limit: filters.limit,
+      offset: filters.offset,
     };
   }
 
@@ -118,6 +113,7 @@ export class PrismaSearchRepository implements SearchRepository {
     title: string;
     description: string | null;
     price: number;
+    currency: string;
     categoryId: string;
     sellerId: string;
     status: 'ACTIVE' | 'ARCHIVED';
@@ -131,6 +127,7 @@ export class PrismaSearchRepository implements SearchRepository {
             title: p.title,
             description: p.description,
             price: p.price,
+            currency: p.currency,
             categoryId: p.categoryId,
             sellerId: p.sellerId,
             status: p.status,
@@ -141,6 +138,7 @@ export class PrismaSearchRepository implements SearchRepository {
             title: p.title,
             description: p.description,
             price: p.price,
+            currency: p.currency,
             categoryId: p.categoryId,
             sellerId: p.sellerId,
             status: p.status,

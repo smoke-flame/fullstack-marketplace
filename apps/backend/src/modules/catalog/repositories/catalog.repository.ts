@@ -27,6 +27,7 @@ export interface ProductEntity {
   title: string;
   description: string | null;
   price: number;
+  currency: string;
   status: ProductStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -39,6 +40,7 @@ export interface ProductRepository {
     title: string;
     description?: string;
     price: number;
+    currency: string;
   }): Promise<ProductEntity>;
   findProductById(id: string): Promise<ProductEntity | null>;
   findProductsByIds(ids: string[]): Promise<ProductEntity[]>;
@@ -46,6 +48,7 @@ export interface ProductRepository {
     title?: string;
     description?: string;
     price?: number;
+    currency?: string;
     categoryId?: string;
     status?: ProductStatus;
   }): Promise<ProductEntity>;
@@ -56,6 +59,7 @@ export interface ProductRepository {
     status?: ProductStatus;
     cursor?: string;
     limit?: number;
+    offset?: number;
   }): Promise<ProductEntity[]>;
 }
 

@@ -3,6 +3,7 @@ import { OrderRepository, ORDER_REPOSITORY, type OrderEntity } from './repositor
 import { type OrderItem } from '@marketplace/contracts/models/order';
 import { v4 as uuidv4 } from 'uuid';
 import { OrderCreatedEvent } from './events/order.created.event';
+import { type PaginatedOrdersResponse } from '@marketplace/contracts/api/orders/orders';
 
 @Injectable()
 export class OrderService {
@@ -27,7 +28,13 @@ export class OrderService {
     return this.orderRepo.findById(id);
   }
 
-  async findByBuyerId(buyerId: string): Promise<OrderEntity[]> {
-    return this.orderRepo.findByBuyerId(buyerId);
+  async findByBuyerId(buyerId: string, limit: number, offset: number): Promise<PaginatedOrdersResponse> {
+    const orders = await this.orderRepo.findByBuyerId(buyerId, limit, offset);
+    return {
+      items: orders,
+      total: orders.length,
+      limit,
+      offset,
+    };
   }
 }

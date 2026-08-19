@@ -8,6 +8,7 @@ export const productUpdatedPayloadSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(5000),
   price: z.number().int().positive(),
+  currency: z.string().min(1).max(3).default('UAH'),
   status: z.enum(['ACTIVE', 'ARCHIVED']),
 });
 

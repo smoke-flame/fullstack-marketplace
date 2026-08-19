@@ -62,6 +62,7 @@ model Product {
   title       String       @db.VarChar(200)
   description String?      @db.Text
   price       Int
+  currency    String       @default("UAH") @db.VarChar(3)
   status      ProductStatus @default(ACTIVE)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -77,6 +78,7 @@ model SearchDocument {
   title       String   @db.VarChar(200)
   description String?  @db.Text
   price       Int
+  currency    String   @default("UAH") @db.VarChar(3)
   categoryId  String
   sellerId    String
   status      ProductStatus @default(ACTIVE)

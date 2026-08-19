@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Search as SearchIcon, SlidersHorizontal, X } from 'lucide-react';
+import { Search as SearchIcon, SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { search } from '@/modules/search/api';
 import type { SearchResponse } from '@marketplace/contracts/api/search/search';
+import type { Sort } from '@marketplace/contracts/api/search/search';
 import { getAllCategories } from '@/modules/catalog/api';
 import type { CategoryResponse } from '@marketplace/contracts/api/catalog/categories';
 import { useAsync, useAppSelector } from '@/shared/hooks';
@@ -20,7 +21,6 @@ import { CreateProductModal } from './components/create-product-modal';
 import { CreateCategoryModal } from './components/create-category-modal';
 
 type CategoryNode = CategoryResponse & { children?: CategoryNode[] };
-type Sort = 'relevance' | 'price_asc' | 'price_desc' | 'createdAt_desc';
 
 export function SearchPage() {
   const [q, setQ] = useState('');
@@ -37,12 +37,16 @@ export function SearchPage() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
   const [categoriesVersion, setCategoriesVersion] = useState(0);
   const { data: categoryData } = useAsync(getAllCategories, [categoriesVersion]);
   const categories = categoryData ?? [];
   const user = useAppSelector((state) => state.user.user);
   const isSeller = user?.roles.includes(UserRole.SELLER) ?? false;
   const dispatch = useAppDispatch();
+
+  const limit = 20;
+  const totalPages = results ? Math.max(1, Math.ceil(results.total / limit)) : 1;
 
   const handleAddToCart = async (event: React.MouseEvent, productId: string) => {
     event.preventDefault();
@@ -60,9 +64,10 @@ export function SearchPage() {
     }
   };
 
-  const handleSubmit = async (event?: React.FormEvent) => {
+  const handleSubmit = async (event?: React.FormEvent, nextPage?: number) => {
     event?.preventDefault();
     const submittedQuery = q.trim();
+    const nextOffset = nextPage !== undefined ? nextPage * limit : 0;
     setLoading(true);
     try {
       const data = await search({
@@ -71,11 +76,13 @@ export function SearchPage() {
         priceMin: priceMin ? Number(priceMin) : undefined,
         priceMax: priceMax ? Number(priceMax) : undefined,
         sort,
-        limit: 20,
+        limit,
+        offset: nextOffset,
       });
       setResults(data);
       setSearchedQuery(submittedQuery);
       setSearched(true);
+      setPage(nextPage !== undefined ? nextPage : 0);
     } catch {
       // handled by the API interceptor
     } finally {
@@ -85,11 +92,11 @@ export function SearchPage() {
 
   useEffect(() => {
     let active = true;
-    search({ sort: 'relevance', limit: 20 })
+    search({ sort: 'relevance', limit, offset: 0 })
       .then((data) => {
         if (active) setResults(data);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (active) setInitialLoading(false);
       });
@@ -102,6 +109,67 @@ export function SearchPage() {
     setPriceMax('');
   };
 
+  const goToPage = (nextPage: number) => {
+    if (nextPage < 0 || nextPage >= totalPages) return;
+    handleSubmit(undefined, nextPage);
+  };
+
+  const renderPageButtons = () => {
+    if (totalPages <= 1) return null;
+    const pages: (number | '...')[] = [];
+    const addPage = (p: number) => pages.push(p);
+
+    addPage(0);
+    if (totalPages > 1) {
+      if (page > 2) pages.push('...');
+      for (let i = Math.max(1, page - 1); i <= Math.min(totalPages - 2, page + 1); i++) {
+        addPage(i);
+      }
+      if (page < totalPages - 3) pages.push('...');
+    }
+    if (totalPages > 1) addPage(totalPages - 1);
+
+    return (
+      <div className="flex items-center justify-center gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => goToPage(page - 1)}
+          disabled={page === 0 || loading}
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        {pages.map((p, idx) =>
+          p === '...' ? (
+            <span key={`ellipsis-${idx}`} className="px-2 text-sm text-muted-foreground">...</span>
+          ) : (
+            <Button
+              key={p}
+              variant={page === p ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => goToPage(p)}
+              disabled={loading}
+              aria-label={`Page ${p + 1}`}
+              aria-current={page === p ? 'page' : undefined}
+            >
+              {p + 1}
+            </Button>
+          ),
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => goToPage(page + 1)}
+          disabled={page === totalPages - 1 || loading}
+          aria-label="Next page"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-muted/30">
       <section className="border-b bg-background">
@@ -111,7 +179,7 @@ export function SearchPage() {
             <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Find something you&apos;ll love</h1>
             <p className="mt-3 text-muted-foreground">Explore products from trusted sellers and discover your next favorite item.</p>
           </div>
-          <form onSubmit={handleSubmit} className="mt-7 flex max-w-4xl flex-col gap-3 sm:flex-row">
+          <form onSubmit={(event) => void handleSubmit(event)} className="mt-7 flex max-w-4xl flex-col gap-3 sm:flex-row">
             <div className="relative flex-1">
               <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
               <Input data-test-id="search-input" className="h-12 rounded-xl border-2 bg-background pl-12 text-base" placeholder="What are you looking for?" value={q} onChange={(event) => setQ(event.target.value)} />
@@ -217,43 +285,50 @@ export function SearchPage() {
                   ))}
                 </div>
               ) : results && results.items.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {results.items.map((item) => (
-                    <Link
-                      key={item.productId}
-                      href={`/products/${item.productId}`}
-                      data-test-id={`product-link-${item.productId}`}
-                      className="group flex flex-col overflow-hidden rounded-xl border bg-background transition hover:-translate-y-0.5 hover:shadow-md"
-                    >
-                      <div className="flex aspect-square items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                        <span className="text-5xl font-bold text-muted-foreground/30">
-                          {item.title.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex flex-1 flex-col p-5">
-                        <h3
-                          data-test-id={`product-title-${item.productId}`}
-                          className="line-clamp-2 min-h-12 font-semibold group-hover:text-primary"
-                        >
-                          {item.title}
-                        </h3>
-                        <p className="mt-3 text-2xl font-bold">${item.price}</p>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {item.categoryTitle} · Seller: {item.sellerEmail}
-                        </p>
-                        <Button
-                          data-test-id={`add-to-cart-${item.productId}`}
-                          type="button"
-                          className="mt-4 w-full"
-                          onClick={(event) => void handleAddToCart(event, item.productId)}
-                          disabled={addingProductId === item.productId}
-                        >
-                          {addingProductId === item.productId ? 'Adding...' : 'Add to cart'}
-                        </Button>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {results.items.map((item) => (
+                      <Link
+                        key={item.productId}
+                        href={`/products/${item.productId}`}
+                        data-test-id={`product-link-${item.productId}`}
+                        className="group flex flex-col overflow-hidden rounded-xl border bg-background transition hover:-translate-y-0.5 hover:shadow-md"
+                      >
+                        <div className="flex aspect-square items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                          <span className="text-5xl font-bold text-muted-foreground/30">
+                            {item.title.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex flex-1 flex-col p-5">
+                          <h3
+                            data-test-id={`product-title-${item.productId}`}
+                            className="line-clamp-2 min-h-12 font-semibold group-hover:text-primary"
+                          >
+                            {item.title}
+                          </h3>
+                          <p className="mt-3 text-2xl font-bold">
+                            {item.currency === 'UAH' ? '₴' : item.currency} {item.price}
+                          </p>
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {item.categoryTitle} · Seller: {item.sellerEmail}
+                          </p>
+                          <Button
+                            data-test-id={`add-to-cart-${item.productId}`}
+                            type="button"
+                            className="mt-4 w-full"
+                            onClick={(event) => void handleAddToCart(event, item.productId)}
+                            disabled={addingProductId === item.productId}
+                          >
+                            {addingProductId === item.productId ? 'Adding...' : 'Add to cart'}
+                          </Button>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="mt-6">
+                    {renderPageButtons()}
+                  </div>
+                </>
               ) : (
                 <div className="rounded-xl border border-dashed bg-background px-6 py-16 text-center">
                   <div className="mx-auto grid size-12 place-items-center rounded-full bg-muted">

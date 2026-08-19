@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@modules/prisma/prisma.service';
 import { ReviewRepository } from './review.repository';
 import type { Review, ProductRating } from '@marketplace/contracts/models/review/review';
+import type { PaginatedReviewsResponse } from '@marketplace/contracts/models/review/review';
 
 @Injectable()
 export class PrismaReviewRepository implements ReviewRepository {
@@ -19,22 +20,19 @@ export class PrismaReviewRepository implements ReviewRepository {
     return this.mapReview(review);
   }
 
-  async findByProductId(productId: string, cursor?: string, limit = 20): Promise<{ reviews: Review[]; nextCursor?: string }> {
+  async findByProductId(productId: string, limit: number, offset: number): Promise<Omit<PaginatedReviewsResponse, 'limit' | 'offset'>> {
     const where: Record<string, unknown> = { productId };
-    if (cursor) {
-      where.id = { lt: cursor };
-    }
 
     const reviews = await this.prisma.review.findMany({
       where,
-      take: limit + 1,
+      take: limit,
+      skip: offset,
       orderBy: { createdAt: 'desc' },
     });
 
-    const nextCursor = reviews.length > limit ? reviews[reviews.length - 1].id : undefined;
     return {
-      reviews: reviews.slice(0, limit).map(this.mapReview),
-      nextCursor,
+      items: reviews.map(this.mapReview),
+      total: reviews.length,
     };
   }
 

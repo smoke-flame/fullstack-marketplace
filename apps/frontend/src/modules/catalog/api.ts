@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/api/client';
-import type { ProductResponse, CreateProductRequest, UpdateProductRequest } from '@marketplace/contracts/api/catalog/products';
+import type { ProductResponse, CreateProductRequest, UpdateProductRequest, PaginatedProductsResponse } from '@marketplace/contracts/api/catalog/products';
 import type { CategoryResponse, CreateCategoryRequest } from '@marketplace/contracts/api/catalog/categories';
 
 export async function getAllCategories(signal?: AbortSignal, query?: string): Promise<CategoryResponse[]> {
@@ -8,11 +8,10 @@ export async function getAllCategories(signal?: AbortSignal, query?: string): Pr
   return response.data;
 }
 
-export async function getAllProducts(signal?: AbortSignal, sellerId?: string): Promise<ProductResponse[]> {
-  const response = await apiClient.get<ProductResponse[]>('/products', {
-    params: sellerId ? { sellerId } : undefined,
-    signal,
-  });
+export async function getAllProducts(signal?: AbortSignal, sellerId?: string, limit = 20, offset = 0): Promise<PaginatedProductsResponse> {
+  const params: Record<string, string | number> = { limit, offset };
+  if (sellerId) params.sellerId = sellerId;
+  const response = await apiClient.get<PaginatedProductsResponse>('/products', { params, signal });
   return response.data;
 }
 

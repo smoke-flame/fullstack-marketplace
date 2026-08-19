@@ -24,7 +24,7 @@ export function ReviewsPage() {
         getReviews(productId),
         getRating(productId),
       ]);
-      setReviews(reviewsData.reviews);
+      setReviews(reviewsData.items);
       setRating(ratingData);
     } catch {
       toast.error('Failed to load reviews');

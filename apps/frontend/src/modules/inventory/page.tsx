@@ -10,26 +10,29 @@ import { toast } from '@/shared/ui/toast';
 import { getStock, setStock } from '@/modules/inventory/api';
 import { getAllProducts } from '@/modules/catalog/api';
 import type { StockResponse } from '@marketplace/contracts/api/inventory/inventory';
-import type { ProductResponse } from '@marketplace/contracts/api/catalog/products';
+import type { PaginatedProductsResponse } from '@marketplace/contracts/api/catalog/products';
 import { setStockRequestSchema, type SetStockRequest } from '@marketplace/contracts/api/inventory/inventory';
 import { useAppSelector, useAsync } from '@/shared/hooks';
 
 export function InventoryPage() {
-  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [products, setProducts] = useState<PaginatedProductsResponse | null>(null);
   const [stocks, setStocks] = useState<Map<string, StockResponse>>(new Map());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
   const userId = useAppSelector((state) => state.user.user?.id);
 
+  const limit = 20;
+
   const productsResult = useAsync(
-    (signal) => userId ? getAllProducts(signal, userId) : Promise.resolve([]),
-    [userId],
+    (signal) => userId ? getAllProducts(signal, userId, limit, page * limit) : Promise.resolve({ items: [], total: 0, limit, offset: page * limit }),
+    [userId, page],
   );
 
   useEffect(() => {
     if (!productsResult.data) return;
     setProducts(productsResult.data);
     Promise.all(
-      productsResult.data.map(async (p) => ({
+      productsResult.data.items.map(async (p) => ({
         productId: p.id,
         stock: await getStock(p.id),
       }))
@@ -63,6 +66,8 @@ export function InventoryPage() {
     }
   };
 
+  const totalPages = products ? Math.max(1, Math.ceil(products.total / limit)) : 1;
+
   const loading = productsResult.loading;
 
   if (loading) {
@@ -85,7 +90,7 @@ export function InventoryPage() {
             </tr>
           </thead>
           <tbody>
-            {products.map((product) => {
+            {products?.items.map((product) => {
               const stock = stocks.get(product.id);
               const isEditing = editingId === product.id;
               return (
@@ -141,6 +146,29 @@ export function InventoryPage() {
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0 || loading}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {page + 1} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1 || loading}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

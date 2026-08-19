@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { CartRepository, CART_REPOSITORY } from './repositories/cart.repository';
 import { CatalogService } from '@modules/catalog/catalog.service';
 import { CartLimitExceededException, CartProductUnavailableException } from '@modules/common/errors/cart-errors';
+import type { CartResponse } from '@marketplace/contracts/api/cart/cart';
 
 @Injectable()
 export class CartService {
@@ -12,9 +13,11 @@ export class CartService {
     private readonly catalogService: CatalogService,
   ) {}
 
-  async getCart(userId: string) {
+  async getCart(userId: string): Promise<CartResponse> {
     const cart = await this.repo.getCart(userId);
-    if (!cart || cart.items.length === 0) return { items: [] };
+    if (!cart || cart.items.length === 0) {
+      return { items: [] };
+    }
 
     const productIds = cart.items.map((i) => i.productId);
     const products = await this.catalogService.findProductsByIds(productIds);
@@ -33,7 +36,10 @@ export class CartService {
   }
 
   async upsertItem(userId: string, productId: string, qty: number) {
-    const cart = await this.repo.getCart(userId) || { items: [] };
+    let cart = await this.repo.getCart(userId);
+    if (!cart) {
+      cart = { items: [] };
+    }
     if (cart.items.length >= 50 && !cart.items.find((i) => i.productId === productId)) {
       throw new CartLimitExceededException();
     }

@@ -1,8 +1,9 @@
 import type { Review, ProductRating } from '@marketplace/contracts/models/review/review';
+import type { PaginatedReviewsResponse } from '@marketplace/contracts/models/review/review';
 
 export interface ReviewRepository {
   create(data: { productId: string; buyerId: string; rating: number; text?: string }): Promise<Review>;
-  findByProductId(productId: string, cursor?: string, limit?: number): Promise<{ reviews: Review[]; nextCursor?: string }>;
+  findByProductId(productId: string, limit: number, offset: number): Promise<Omit<PaginatedReviewsResponse, 'limit' | 'offset'>>;
   findById(reviewId: string): Promise<Review | null>;
   findByBuyerIdAndProductId(buyerId: string, productId: string): Promise<Review | null>;
   delete(reviewId: string, buyerId: string): Promise<void>;

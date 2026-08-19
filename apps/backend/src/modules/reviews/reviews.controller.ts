@@ -1,11 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards, Query, UsePipes } from '@nestjs/common';
+import { z } from 'zod';
 import { ReviewsService } from './reviews.service';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
+import { Public } from '@modules/common/decorators/public.decorator';
+import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
 import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
 import type { ReviewResponse, ProductRating, CreateReviewRequest } from '@marketplace/contracts/models/review/review';
 import { createReviewRequestSchema } from '@marketplace/contracts/models/review/review';
-import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
-import { Public } from '@modules/common/decorators/public.decorator';
+import type { PaginatedReviewsResponse } from '@marketplace/contracts/models/review/review';
+
+const getReviewsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(20).max(100).default(20),
+  offset: z.coerce.number().int().nonnegative().default(0),
+});
+
+type GetReviewsQuery = z.infer<typeof getReviewsQuerySchema>;
 
 @Controller()
 export class ReviewsController {
@@ -23,8 +32,9 @@ export class ReviewsController {
 
   @Get('products/:id/reviews')
   @Public()
-  async getReviews(@Param('id') productId: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string): Promise<{ reviews: ReviewResponse[]; nextCursor?: string }> {
-    return this.reviewsService.getReviews(productId, cursor, limit ? parseInt(limit, 10) : 20);
+  @UsePipes(new ZodValidationPipe(getReviewsQuerySchema))
+  async getReviews(@Param('id') productId: string, @Query() query: GetReviewsQuery): Promise<PaginatedReviewsResponse> {
+    return this.reviewsService.getReviews(productId, query.limit, query.offset);
   }
 
   @Get('products/:id/rating')

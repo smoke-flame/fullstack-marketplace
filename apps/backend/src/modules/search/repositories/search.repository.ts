@@ -4,6 +4,7 @@ export interface SearchDocumentEntity {
   title: string;
   description: string | null;
   price: number;
+  currency: string;
   categoryId: string;
   sellerId: string;
   categoryTitle?: string;
@@ -18,6 +19,7 @@ export interface SearchRepository {
     title: string;
     description?: string;
     price: number;
+    currency: string;
     categoryId: string;
     sellerId: string;
     status: 'ACTIVE' | 'ARCHIVED';
@@ -30,14 +32,15 @@ export interface SearchRepository {
     priceMin?: number;
     priceMax?: number;
     sellerId?: string;
-    cursor?: string;
     limit: number;
-  }): Promise<{ items: SearchDocumentEntity[]; nextCursor?: string }>;
+    offset: number;
+  }): Promise<{ items: SearchDocumentEntity[]; total: number; limit: number; offset: number }>;
   reindex(products: Array<{
     id: string;
     title: string;
     description: string | null;
     price: number;
+    currency: string;
     categoryId: string;
     sellerId: string;
     status: 'ACTIVE' | 'ARCHIVED';

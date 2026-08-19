@@ -1,13 +1,21 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards, Query, UsePipes } from '@nestjs/common';
+import { z } from 'zod';
 import { OrderService } from './order.service';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
 import { OrderSagaOrchestrator } from './saga/order-saga.orchestrator';
 import { OrderNotFoundException } from '@modules/common/errors/order-errors';
-import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
-import { createOrderRequestSchema, type CreateOrderRequest, type OrderResponse } from '@marketplace/contracts/api/orders/orders';
 import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
+import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
+import { createOrderRequestSchema, type CreateOrderRequest, type OrderResponse, type PaginatedOrdersResponse } from '@marketplace/contracts/api/orders/orders';
 
 type CreateOrderBody = CreateOrderRequest;
+
+const findOrdersQuerySchema = z.object({
+  limit: z.coerce.number().int().min(20).max(100).default(20),
+  offset: z.coerce.number().int().nonnegative().default(0),
+});
+
+type FindOrdersQuery = z.infer<typeof findOrdersQuerySchema>;
 
 @Controller()
 export class OrderController {
@@ -27,8 +35,9 @@ export class OrderController {
 
   @Get('orders')
   @UseGuards(JwtGatewayGuard)
-  async findOrders(@Req() request: GatewayRequest): Promise<OrderResponse[]> {
-    return this.orderService.findByBuyerId(request.user!.id);
+  @UsePipes(new ZodValidationPipe(findOrdersQuerySchema))
+  async findOrders(@Req() request: GatewayRequest, @Query() query: FindOrdersQuery): Promise<PaginatedOrdersResponse> {
+    return this.orderService.findByBuyerId(request.user!.id, query.limit, query.offset);
   }
 
   @Get('orders/:id')

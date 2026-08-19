@@ -16,7 +16,7 @@ export function CartPage() {
   const items = useAppSelector((state) => state.cart.items);
   const [updating, setUpdating] = useState<string | null>(null);
 
-  const { data: cart, loading } = useAsync(getCart, []);
+  const { data: cart, loading } = useAsync(() => getCart(), []);
 
   useEffect(() => {
     if (cart) dispatch(setCart(cart.items));

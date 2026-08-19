@@ -32,3 +32,12 @@ export const orderResponseSchema = z.object({
 });
 
 export type OrderResponse = z.infer<typeof orderResponseSchema>;
+
+export const paginatedOrdersResponseSchema = z.object({
+  items: z.array(orderResponseSchema),
+  total: z.number().int().nonnegative(),
+  limit: z.number().int().min(20).max(100),
+  offset: z.number().int().nonnegative(),
+});
+
+export type PaginatedOrdersResponse = z.infer<typeof paginatedOrdersResponseSchema>;

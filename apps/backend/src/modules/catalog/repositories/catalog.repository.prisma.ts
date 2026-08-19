@@ -76,6 +76,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
     title: string;
     description?: string;
     price: number;
+    currency: string;
   }): Promise<ProductEntity> {
     const product = await this.prisma.product.create({
       data: {
@@ -84,6 +85,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
         title: data.title,
         description: data.description,
         price: data.price,
+        currency: data.currency,
         status: 'ACTIVE',
       },
     });
@@ -107,6 +109,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
     title?: string;
     description?: string;
     price?: number;
+    currency?: string;
     categoryId?: string;
     status?: ProductStatus;
   }): Promise<ProductEntity> {
@@ -116,6 +119,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.price !== undefined && { price: data.price }),
+        ...(data.currency !== undefined && { currency: data.currency }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.status !== undefined && { status: data.status }),
       },
@@ -137,6 +141,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
     status?: ProductStatus;
     cursor?: string;
     limit?: number;
+    offset?: number;
   }): Promise<ProductEntity[]> {
     const where: Record<string, unknown> = {};
     if (filters?.categoryId) where.categoryId = filters.categoryId;
@@ -145,7 +150,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
 
     const products = await this.prisma.product.findMany({
       where,
-      ...(filters?.cursor ? { skip: 1, cursor: { id: filters.cursor } } : {}),
+      ...(filters?.cursor ? { skip: 1, cursor: { id: filters.cursor } } : { skip: filters?.offset }),
       take: filters?.limit ?? 20,
       orderBy: { createdAt: 'desc' },
     });
@@ -159,6 +164,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
     title: string;
     description: string | null;
     price: number;
+    currency: string;
     status: ProductStatus;
     createdAt: Date;
     updatedAt: Date;
@@ -170,6 +176,7 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
       title: product.title,
       description: product.description,
       price: product.price,
+      currency: product.currency,
       status: product.status,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,

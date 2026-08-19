@@ -24,12 +24,23 @@ import {
   type BatchProductsRequest,
   type BatchProductsResponse,
   type ProductResponse,
+  type PaginatedProductsResponse,
 } from '@marketplace/contracts/api/catalog';
-import type { ProductStatus } from '@marketplace/contracts/models';
+import { ProductStatus } from '@marketplace/contracts/models';
 import { type ProductCreatedPayload } from '@marketplace/contracts/events/catalog/product-created';
 import { type ProductUpdatedPayload } from '@marketplace/contracts/events/catalog/product-updated';
 
 type CreateCategoryBody = z.infer<typeof createCategoryRequestSchema>;
+
+const findAllProductsQuerySchema = z.object({
+  categoryId: z.string().uuid().optional(),
+  sellerId: z.string().uuid().optional(),
+  status: z.enum(['ACTIVE', 'ARCHIVED']).optional(),
+  limit: z.coerce.number().int().min(20).max(100).default(20),
+  offset: z.coerce.number().int().nonnegative().default(0),
+});
+
+type FindAllProductsQuery = z.infer<typeof findAllProductsQuerySchema>;
 
 @Controller()
 export class CatalogController {
@@ -67,7 +78,9 @@ export class CatalogController {
       sellerId: product.sellerId,
       categoryId: product.categoryId,
       title: product.title,
+      description: product.description ?? '',
       price: product.price,
+      currency: product.currency,
       status: product.status,
     };
     await this.publisher.publish(new ProductCreatedEvent(payload, request.correlationId));
@@ -87,21 +100,23 @@ export class CatalogController {
   @Get('products')
   @Public()
   @RateLimitGroup('catalog')
-  async findAllProducts(
-    @Query('categoryId') categoryId?: string,
-    @Query('sellerId') sellerId?: string,
-    @Query('status') status?: ProductStatus,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-  ): Promise<ProductResponse[]> {
-    const products = await this.catalogService.findAllProducts({
-      categoryId,
-      sellerId,
-      status,
-      cursor,
-      limit: limit ? parseInt(limit, 10) : undefined,
+  @UsePipes(new ZodValidationPipe(findAllProductsQuerySchema))
+  async findAllProducts(@Query() query: FindAllProductsQuery): Promise<PaginatedProductsResponse> {
+    const q = query as FindAllProductsQuery;
+    const result = await this.catalogService.findAllProducts({
+      categoryId: q.categoryId,
+      sellerId: q.sellerId,
+      status: q.status,
+      limit: q.limit,
+      offset: q.offset,
     });
-    return products.map((p) => this.mapProductResponse(p));
+    const paginated = Array.isArray(result) ? { items: result, total: result.length, limit: q.limit, offset: q.offset } : result;
+    return {
+      items: paginated.items.map((p) => this.mapProductResponse(p)),
+      total: paginated.total,
+      limit: paginated.limit,
+      offset: paginated.offset,
+    };
   }
 
   @Patch('products/:id')
@@ -120,6 +135,7 @@ export class CatalogController {
       title: product.title,
       description: product.description ?? '',
       price: product.price,
+      currency: product.currency,
       status: product.status,
     };
     await this.publisher.publish(new ProductUpdatedEvent(payload, request.correlationId));
@@ -149,6 +165,7 @@ export class CatalogController {
     title: string;
     description: string | null;
     price: number;
+    currency: string;
     status: ProductStatus;
     createdAt: Date;
     updatedAt: Date;
@@ -164,6 +181,7 @@ export class CatalogController {
       title: product.title,
       description: product.description,
       price: product.price,
+      currency: product.currency,
       status: product.status,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,

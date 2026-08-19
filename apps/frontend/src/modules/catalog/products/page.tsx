@@ -5,21 +5,24 @@ import Link from 'next/link';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { getAllProducts, getAllCategories } from '@/modules/catalog/api';
-import type { ProductResponse } from '@marketplace/contracts/api/catalog/products';
+import type { PaginatedProductsResponse } from '@marketplace/contracts/api/catalog/products';
 import type { CategoryResponse } from '@marketplace/contracts/api/catalog/categories';
 import { useAsync } from '@/shared/hooks';
 
 export function ProductsPage() {
-  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [productsData, setProductsData] = useState<PaginatedProductsResponse | null>(null);
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [page, setPage] = useState(0);
 
-  const productsResult = useAsync(() => getAllProducts(), []);
+  const limit = 20;
+
+  const productsResult = useAsync(() => getAllProducts(undefined, undefined, limit, page * limit), [page]);
   const categoriesResult = useAsync(() => getAllCategories(), []);
 
   useEffect(() => {
-    if (productsResult.data) setProducts(productsResult.data);
+    if (productsResult.data) setProductsData(productsResult.data);
   }, [productsResult.data]);
 
   useEffect(() => {
@@ -27,6 +30,9 @@ export function ProductsPage() {
   }, [categoriesResult.data]);
 
   const loading = productsResult.loading || categoriesResult.loading;
+
+  const products = productsData?.items ?? [];
+  const totalPages = productsData ? Math.max(1, Math.ceil(productsData.total / limit)) : 1;
 
   const filtered = products.filter((p) => {
     const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase());
@@ -75,7 +81,9 @@ export function ProductsPage() {
           <Link key={product.id} href={`/products/${product.id}`} className="block">
             <div className="rounded-lg border p-6 transition-colors hover:bg-muted/50">
               <h3 className="font-semibold">{product.title}</h3>
-              <p className="mt-2 text-2xl font-bold">${product.price}</p>
+              <p className="mt-2 text-2xl font-bold">
+                {product.currency === 'UAH' ? '₴' : product.currency} {product.price}
+              </p>
               <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                 {product.description ?? 'No description'}
               </p>
@@ -91,6 +99,30 @@ export function ProductsPage() {
 
       {filtered.length === 0 && (
         <p className="mt-8 text-center text-muted-foreground">No products found.</p>
+      )}
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0 || loading}
+            className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-muted-foreground">
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={page === totalPages - 1 || loading}
+            className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       )}
     </div>
   );

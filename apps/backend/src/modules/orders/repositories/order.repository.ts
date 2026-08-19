@@ -20,7 +20,7 @@ export interface OrderRepository {
     outbox: { aggregateType: string; eventType: string; payload: string };
   }): Promise<OrderEntity>;
   findById(id: string): Promise<OrderEntity | null>;
-  findByBuyerId(buyerId: string): Promise<OrderEntity[]>;
+  findByBuyerId(buyerId: string, limit: number, offset: number): Promise<OrderEntity[]>;
   updateStatus(id: string, status: OrderStatus, reason?: string | null): Promise<OrderEntity>;
   addTimelineEntry(orderId: string, status: OrderStatus, reason?: string | null): Promise<void>;
   findActiveOrderForBuyer(buyerId: string): Promise<OrderEntity | null>;

@@ -3,6 +3,8 @@ import { SearchRepository, SEARCH_REPOSITORY } from './repositories/search.repos
 import type { SearchDocumentEntity } from './repositories/search.repository';
 import type { SearchRequest, SearchResponse } from '@marketplace/contracts/api/search/search';
 import { CatalogService } from '@modules/catalog/catalog.service';
+import type { ProductCreatedPayload } from '@marketplace/contracts/events/catalog/product-created';
+import type { ProductUpdatedPayload } from '@marketplace/contracts/events/catalog/product-updated';
 
 @Injectable()
 export class SearchService {
@@ -18,35 +20,36 @@ export class SearchService {
       priceMin: filters.priceMin,
       priceMax: filters.priceMax,
       sellerId: filters.sellerId,
-      cursor: filters.cursor,
       limit: filters.limit,
+      offset: filters.offset,
     });
-    if (result.items.length === 0) {
-      return { items: [] };
-    }
 
     return {
       items: result.items.map((item) => ({
         productId: item.productId,
         title: item.title,
         price: item.price,
+        currency: item.currency,
         categoryId: item.categoryId,
         sellerId: item.sellerId,
         categoryTitle: item.categoryTitle ?? item.categoryId,
         sellerEmail: item.sellerEmail ?? item.sellerId,
       })),
-      nextCursor: result.nextCursor,
+      total: result.total,
+      limit: result.limit,
+      offset: result.offset,
     };
   }
 
   async reindexAll(): Promise<void> {
     const batchSize = 100;
-    let cursor: string | undefined;
+    let offset = 0;
     let hasMore = true;
     const all: SearchDocumentEntity[] = [];
 
     while (hasMore) {
-      const products = await this.catalogService.findAllProducts({ status: 'ACTIVE', limit: batchSize, cursor });
+      const result = await this.catalogService.findAllProducts({ status: 'ACTIVE', limit: batchSize, offset });
+      const products = Array.isArray(result) ? result : result.items;
       if (products.length === 0) {
         hasMore = false;
         break;
@@ -57,13 +60,14 @@ export class SearchService {
         title: p.title,
         description: p.description,
         price: p.price,
+        currency: p.currency,
         categoryId: p.categoryId,
         sellerId: p.sellerId,
         status: p.status,
         occurredAt: p.updatedAt,
       }));
       all.push(...docs);
-      cursor = products[products.length - 1].id;
+      offset += products.length;
       if (products.length < batchSize) hasMore = false;
     }
 
@@ -73,6 +77,7 @@ export class SearchService {
         title: p.title,
         description: p.description,
         price: p.price,
+        currency: p.currency,
         categoryId: p.categoryId,
         sellerId: p.sellerId,
         status: p.status,
@@ -81,11 +86,13 @@ export class SearchService {
     );
   }
 
-  async indexCreated(payload: { productId: string; title: string; price: number; categoryId: string; sellerId: string; status: string }, occurredAt: Date): Promise<void> {
+  async indexCreated(payload: ProductCreatedPayload, occurredAt: Date): Promise<void> {
     await this.repo.upsert({
       productId: payload.productId,
       title: payload.title,
+      description: payload.description,
       price: payload.price,
+      currency: payload.currency,
       categoryId: payload.categoryId,
       sellerId: payload.sellerId,
       status: payload.status as 'ACTIVE' | 'ARCHIVED',
@@ -93,8 +100,8 @@ export class SearchService {
     });
   }
 
-  async indexUpdated(payload: { productId: string; title: string; description: string; price: number; categoryId: string; sellerId: string; status: string }, occurredAt: Date): Promise<void> {
-    const existing = await this.repo.search({ q: undefined, limit: 1 });
+  async indexUpdated(payload: ProductUpdatedPayload, occurredAt: Date): Promise<void> {
+    const existing = await this.repo.search({ q: undefined, limit: 1, offset: 0 });
     const doc = existing.items.find((item) => item.productId === payload.productId);
     if (doc && occurredAt <= doc.occurredAt) return;
     await this.repo.upsert({
@@ -102,6 +109,7 @@ export class SearchService {
       title: payload.title,
       description: payload.description,
       price: payload.price,
+      currency: payload.currency,
       categoryId: payload.categoryId,
       sellerId: payload.sellerId,
       status: payload.status as 'ACTIVE' | 'ARCHIVED',

@@ -6,6 +6,7 @@ export const createProductRequestSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(5000).optional(),
   price: z.number().int().positive(),
+  currency: z.string().min(1).max(3).optional(),
   categoryId: z.string().uuid(),
 });
 
@@ -25,19 +26,29 @@ export type BatchProductsRequest = z.infer<typeof batchProductsRequestSchema>;
 
 export const productResponseSchema = z.object({
   id: z.string().uuid(),
-  sellerId: z.string().uuid(),
+  sellerId: uuidV4Schema,
   sellerEmail: z.string().email().optional(),
-  categoryId: z.string().uuid(),
+  categoryId: uuidV4Schema,
   categoryTitle: z.string().min(1).optional(),
   title: z.string().min(1).max(200),
   description: z.string().max(5000).nullable(),
   price: z.number().int().positive(),
+  currency: z.string().min(1).max(3).default('UAH'),
   status: productStatusSchema,
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
 
 export type ProductResponse = z.infer<typeof productResponseSchema>;
+
+export const paginatedProductsResponseSchema = z.object({
+  items: z.array(productResponseSchema),
+  total: z.number().int().nonnegative(),
+  limit: z.number().int().min(20).max(100),
+  offset: z.number().int().nonnegative(),
+});
+
+export type PaginatedProductsResponse = z.infer<typeof paginatedProductsResponseSchema>;
 
 export const batchProductsResponseSchema = z.object({
   products: z.array(productResponseSchema),

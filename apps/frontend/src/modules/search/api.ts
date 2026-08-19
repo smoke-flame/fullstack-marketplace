@@ -9,8 +9,8 @@ export async function search(query: SearchRequest): Promise<SearchResponse> {
   if (query.priceMax !== undefined) params.set('priceMax', String(query.priceMax));
   if (query.sellerId) params.set('sellerId', query.sellerId);
   if (query.sort) params.set('sort', query.sort);
-  if (query.limit) params.set('limit', String(query.limit));
-  if (query.cursor) params.set('cursor', query.cursor);
+  params.set('limit', String(query.limit));
+  params.set('offset', String(query.offset));
 
   const response = await apiClient.get<SearchResponse>(`/search?${params.toString()}`);
   return response.data;

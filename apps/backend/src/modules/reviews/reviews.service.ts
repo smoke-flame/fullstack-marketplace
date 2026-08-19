@@ -1,7 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ReviewRepository, REVIEW_REPOSITORY } from './repositories/review.repository';
 import { ReviewAlreadyExistsException, ReviewNotFoundException, ReviewForbiddenException, PurchaseNotFoundException } from '@modules/common/errors/review-errors';
-import type { ReviewResponse, ProductRating, CreateReviewRequest } from '@marketplace/contracts/models/review/review';
+import type { ReviewResponse, CreateReviewRequest, ProductRating } from '@marketplace/contracts/models/review/review';
+import type { PaginatedReviewsResponse } from '@marketplace/contracts/models/review/review';
 
 @Injectable()
 export class ReviewsService {
@@ -32,11 +33,13 @@ export class ReviewsService {
     return review;
   }
 
-  async getReviews(productId: string, cursor?: string, limit = 20): Promise<{ reviews: ReviewResponse[]; nextCursor?: string }> {
-    const result = await this.reviewRepo.findByProductId(productId, cursor, limit);
+  async getReviews(productId: string, limit: number, offset: number): Promise<PaginatedReviewsResponse> {
+    const result = await this.reviewRepo.findByProductId(productId, limit, offset);
     return {
-      reviews: result.reviews,
-      nextCursor: result.nextCursor,
+      items: result.items,
+      total: result.total,
+      limit,
+      offset,
     };
   }
 
@@ -55,7 +58,6 @@ export class ReviewsService {
 
     await this.reviewRepo.delete(reviewId, buyerId);
     await this.reviewRepo.upsertProductRating(review.productId);
-
   }
 
   async onOrderCompleted(productId: string, buyerId: string, orderId: string): Promise<void> {

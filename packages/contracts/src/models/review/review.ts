@@ -30,3 +30,12 @@ export const productRatingSchema = z.object({
 });
 
 export type ProductRating = z.infer<typeof productRatingSchema>;
+
+export const paginatedReviewsResponseSchema = z.object({
+  items: z.array(reviewResponseSchema),
+  total: z.number().int().nonnegative(),
+  limit: z.number().int().min(20).max(100),
+  offset: z.number().int().nonnegative(),
+});
+
+export type PaginatedReviewsResponse = z.infer<typeof paginatedReviewsResponseSchema>;

@@ -53,7 +53,7 @@ export class PrismaOrderRepository implements OrderRepository {
     return this.mapOrder(order);
   }
 
-  async findByBuyerId(buyerId: string): Promise<OrderEntity[]> {
+  async findByBuyerId(buyerId: string, limit: number, offset: number): Promise<OrderEntity[]> {
     const orders = await this.prisma.order.findMany({
       where: { buyerId },
       include: {
@@ -63,6 +63,8 @@ export class PrismaOrderRepository implements OrderRepository {
         },
       },
       orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
     });
     return orders.map((o) => this.mapOrder(o));
   }

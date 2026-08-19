@@ -1,16 +1,13 @@
 import { apiClient } from '@/shared/api/client';
-import type { ReviewResponse, ProductRating, CreateReviewRequest } from '@marketplace/contracts/models/review/review';
+import type { ReviewResponse, ProductRating, CreateReviewRequest, PaginatedReviewsResponse } from '@marketplace/contracts/models/review/review';
 
 export async function createReview(productId: string, data: CreateReviewRequest): Promise<ReviewResponse> {
   const response = await apiClient.post<ReviewResponse>(`/products/${productId}/reviews`, data);
   return response.data;
 }
 
-export async function getReviews(productId: string, cursor?: string, limit = 20): Promise<{ reviews: ReviewResponse[]; nextCursor?: string }> {
-  const params = new URLSearchParams();
-  if (cursor) params.set('cursor', cursor);
-  params.set('limit', String(limit));
-  const response = await apiClient.get<{ reviews: ReviewResponse[]; nextCursor?: string }>(`/products/${productId}/reviews?${params.toString()}`);
+export async function getReviews(productId: string, limit = 20, offset = 0): Promise<PaginatedReviewsResponse> {
+  const response = await apiClient.get<PaginatedReviewsResponse>(`/products/${productId}/reviews?limit=${limit}&offset=${offset}`);
   return response.data;
 }
 
