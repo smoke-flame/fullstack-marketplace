@@ -18,7 +18,7 @@ export const reviewResponseSchema = reviewSchema;
 export type ReviewResponse = z.infer<typeof reviewResponseSchema>;
 
 export const createReviewRequestSchema = z.object({
-  rating: z.number().int().min(1).max(5),
+  rating: z.coerce.number().int().min(1).max(5),
   text: z.string().max(2000).optional(),
 });
 

@@ -23,12 +23,21 @@ interface RetryContext {
   baseDelayMs: number;
 }
 
+export interface SentNotification {
+  eventType: string;
+  correlationId: string;
+  message: string;
+  sentAt: Date;
+}
+
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
   private readonly failureProbability: number;
   private readonly maxRetries: number;
   private readonly baseDelayMs: number;
+  private readonly sentNotifications: SentNotification[] = [];
+  private readonly maxStoredNotifications = 200;
 
   constructor(
     private readonly publisher: EventPublisher,
@@ -40,6 +49,27 @@ export class NotificationService {
     this.failureProbability = env.NOTIFICATION_FAILURE_PROBABILITY ?? 0;
     this.maxRetries = env.NOTIFICATION_MAX_RETRIES ?? 5;
     this.baseDelayMs = env.NOTIFICATION_RETRY_BASE_DELAY_MS ?? 1000;
+  }
+
+  getSentNotifications(): SentNotification[] {
+    return this.sentNotifications;
+  }
+
+  clearSentNotifications(): void {
+    this.sentNotifications.length = 0;
+  }
+
+  private recordNotification(eventType: string, correlationId: string, message: NotificationMessage): void {
+    if (env.NODE_ENV === 'production') return;
+    this.sentNotifications.push({
+      eventType,
+      correlationId,
+      message: JSON.stringify(message),
+      sentAt: new Date(),
+    });
+    if (this.sentNotifications.length > this.maxStoredNotifications) {
+      this.sentNotifications.splice(0, this.sentNotifications.length - this.maxStoredNotifications);
+    }
   }
 
   async sendWelcomeEmail(payload: { userId: string; email: string; roles: string[] }, correlationId: string): Promise<void> {
@@ -80,6 +110,7 @@ export class NotificationService {
         }
 
         this.logger.log(`Notification sent: ${JSON.stringify({ eventType, correlationId, message })}`);
+        this.recordNotification(eventType, correlationId, message);
         return true;
       } catch (error) {
         ctx.retries++;

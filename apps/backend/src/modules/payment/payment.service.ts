@@ -10,11 +10,11 @@ import { PaymentDlqEvent } from './events/payment-dlq.event';
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
-  private readonly failureProbability: number;
   private readonly minDelayMs: number;
   private readonly maxDelayMs: number;
   private readonly maxRetries: number;
   private readonly baseRetryDelayMs: number;
+  private failureProbability: number;
 
   constructor(
     @Inject(PAYMENT_REPOSITORY) private readonly paymentRepo: PaymentRepository,
@@ -25,6 +25,14 @@ export class PaymentService {
     this.maxDelayMs = env.PAYMENT_MAX_DELAY_MS ?? 5000;
     this.maxRetries = env.PAYMENT_MAX_RETRIES ?? 3;
     this.baseRetryDelayMs = env.PAYMENT_RETRY_BASE_DELAY_MS ?? 1000;
+  }
+
+  getFailureProbability(): number {
+    return this.failureProbability;
+  }
+
+  setFailureProbability(value: number): void {
+    this.failureProbability = value;
   }
 
   async processCharge(sagaId: string, amount: number, buyerId: string, correlationId: string): Promise<void> {
