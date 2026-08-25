@@ -39,8 +39,7 @@ export class AuthController {
   @Public()
   @Post('register')
   @RateLimitGroup('auth')
-  @UsePipes(new ZodValidationPipe(registerUserRequestSchema))
-  async register(@Body() body: RegisterBody, @Req() request: GatewayRequest): Promise<RegisterUserResponse> {
+  async register(@Body(new ZodValidationPipe(registerUserRequestSchema)) body: RegisterBody, @Req() request: GatewayRequest): Promise<RegisterUserResponse> {
     const result = await this.authService.register(body.email, body.password, body.roles);
     const event = new UserCreatedEvent(
       { userId: result.userId, email: body.email, roles: body.roles },

@@ -7,6 +7,8 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "lint": "eslint src --max-warnings=0",
+    "test": "jest",
+    "test:e2e": "jest --testPathPatterns=test/e2e/jest --runInBand",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts"
@@ -32,16 +34,20 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@marketplace/eslint-config": "workspace:*",
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
-    "@nestjs/testing": "^10.4.15",
-    "@marketplace/eslint-config": "workspace:*",
+    "@nestjs/testing": "^10.4.22",
     "@types/amqplib": "^0.10.6",
     "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.10.5",
     "@types/uuid": "^9.0.8",
     "eslint": "^9.17.0",
+    "jest": "^30.4.2",
     "prisma": "^6.2.1",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.19.1"

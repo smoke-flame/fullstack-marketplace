@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards, Query, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { OrderService } from './order.service';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
@@ -35,8 +35,7 @@ export class OrderController {
 
   @Get('orders')
   @UseGuards(JwtGatewayGuard)
-  @UsePipes(new ZodValidationPipe(findOrdersQuerySchema))
-  async findOrders(@Req() request: GatewayRequest, @Query() query: FindOrdersQuery): Promise<PaginatedOrdersResponse> {
+  async findOrders(@Req() request: GatewayRequest, @Query(new ZodValidationPipe(findOrdersQuerySchema)) query: FindOrdersQuery): Promise<PaginatedOrdersResponse> {
     return this.orderService.findByBuyerId(request.user!.id, query.limit, query.offset);
   }
 

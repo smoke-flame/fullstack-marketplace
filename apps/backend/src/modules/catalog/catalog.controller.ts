@@ -70,8 +70,7 @@ export class CatalogController {
   @Post('products')
   @RateLimitGroup('catalog')
   @UseGuards(JwtGatewayGuard, SellerGuard)
-  @UsePipes(new ZodValidationPipe(createProductRequestSchema))
-  async createProduct(@Body() body: CreateProductRequest, @Req() request: GatewayRequest): Promise<ProductResponse> {
+  async createProduct(@Body(new ZodValidationPipe(createProductRequestSchema)) body: CreateProductRequest, @Req() request: GatewayRequest): Promise<ProductResponse> {
     const product = await this.catalogService.createProduct(request.user!.id, body);
     const payload: ProductCreatedPayload = {
       productId: product.id,

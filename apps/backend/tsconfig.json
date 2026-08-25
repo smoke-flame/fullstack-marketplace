@@ -17,8 +17,11 @@
                                                          ],
                                           "@config/*":  [
                                                              "src/config/*"
-                                                         ]
-                                      },
+                                                         ],
+                                          "@marketplace/contracts/*": [
+                                            "../../packages/contracts/src/*"
+                                          ]
+                                       },
                             "incremental":  true,
                             "strict":  true,
                             "skipLibCheck":  true,
@@ -26,6 +29,7 @@
                             "noUnusedParameters":  true
                         },
     "include":  [
-                    "src/**/*.ts"
+                    "src/**/*.ts",
+                    "test/**/*.ts"
                 ]
 }

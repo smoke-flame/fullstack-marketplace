@@ -67,9 +67,10 @@ export class PrismaInventoryRepository implements InventoryRepository {
         return { success: true };
       }, { isolationLevel: 'Serializable' });
     } catch (error: unknown) {
-      // A simultaneous duplicate can lose the unique-index race.  It has
-      // already been reserved by the winning transaction, so it is a no-op.
-      if ((error as { code?: string }).code === 'P2002') return { success: true };
+      const code = (error as { code?: string }).code;
+      if (code === 'P2002' || code === 'P2034') {
+        return { success: false };
+      }
       throw error;
     }
   }

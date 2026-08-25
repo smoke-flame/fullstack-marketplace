@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards, Query, UsePipes } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { ReviewsService } from './reviews.service';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
@@ -32,8 +32,7 @@ export class ReviewsController {
 
   @Get('products/:id/reviews')
   @Public()
-  @UsePipes(new ZodValidationPipe(getReviewsQuerySchema))
-  async getReviews(@Param('id') productId: string, @Query() query: GetReviewsQuery): Promise<PaginatedReviewsResponse> {
+  async getReviews(@Param('id') productId: string, @Query(new ZodValidationPipe(getReviewsQuerySchema)) query: GetReviewsQuery): Promise<PaginatedReviewsResponse> {
     return this.reviewsService.getReviews(productId, query.limit, query.offset);
   }
 
