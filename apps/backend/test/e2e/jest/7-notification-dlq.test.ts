@@ -70,7 +70,7 @@ describe('Notification DLQ (Jest)', () => {
       correlationId,
     };
 
-    await dlqService.replayNotificationDlq(dlqPayload);
+    await dlqService.replayNotificationDlq(dlqPayload as any);
 
     expect(mockPublisher.publish).toHaveBeenCalledTimes(1);
     const publishedEvent = mockPublisher.publish.mock.calls[0][0];
@@ -96,7 +96,7 @@ describe('Notification DLQ (Jest)', () => {
       correlationId,
     };
 
-    await dlqService.replayNotificationDlq(dlqPayload);
+    await dlqService.replayNotificationDlq(dlqPayload as any);
 
     expect(mockPublisher.publish).toHaveBeenCalledTimes(1);
     const publishedEvent = mockPublisher.publish.mock.calls[0][0];
@@ -121,7 +121,7 @@ describe('Notification DLQ (Jest)', () => {
       correlationId,
     };
 
-    await dlqService.replayNotificationDlq(dlqPayload);
+    await dlqService.replayNotificationDlq(dlqPayload as any);
 
     expect(mockPublisher.publish).toHaveBeenCalledTimes(1);
     const publishedEvent = mockPublisher.publish.mock.calls[0][0];
@@ -146,7 +146,7 @@ describe('Notification DLQ (Jest)', () => {
       correlationId,
     };
 
-    await dlqService.replayNotificationDlq(dlqPayload);
+    await dlqService.replayNotificationDlq(dlqPayload as any);
 
     expect(mockPublisher.publish).toHaveBeenCalledTimes(1);
     const publishedEvent = mockPublisher.publish.mock.calls[0][0];

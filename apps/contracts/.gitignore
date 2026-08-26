@@ -1,0 +1,15 @@
+# Build output
+dist/
+*.js
+*.d.ts
+*.map
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

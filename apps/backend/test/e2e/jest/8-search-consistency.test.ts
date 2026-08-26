@@ -55,7 +55,7 @@ describe('Search eventual consistency (Jest)', () => {
     });
 
     await prisma.user.create({
-      data: { id: sellerId, email: `seller-${Date.now()}@test.com`, roles: ['buyer', 'seller'], password: 'hashed' },
+      data: { id: sellerId, email: `seller-${Date.now()}@test.com`, roles: ['BUYER', 'SELLER'], password: 'hashed' },
     });
   });
 
@@ -84,7 +84,7 @@ describe('Search eventual consistency (Jest)', () => {
       {
         productId: testProductId,
         title: product.title,
-        description: product.description,
+        description: product.description!,
         price: originalPrice,
         currency: 'UAH',
         categoryId: testCategoryId,
@@ -94,7 +94,7 @@ describe('Search eventual consistency (Jest)', () => {
       new Date(),
     );
 
-    let searchResult = await searchService.search({ q: undefined, limit: 10, offset: 0 });
+    let searchResult = await searchService.search({ q: undefined, sort: 'relevance', limit: 10, offset: 0 });
     expect(searchResult.items).toHaveLength(1);
     expect(searchResult.items[0].price).toBe(originalPrice);
 
@@ -105,13 +105,13 @@ describe('Search eventual consistency (Jest)', () => {
     const dbProduct = await prisma.product.findUnique({ where: { id: testProductId } });
     expect(dbProduct?.price).toBe(updatedPrice);
 
-    searchResult = await searchService.search({ q: undefined, limit: 10, offset: 0 });
+    searchResult = await searchService.search({ q: undefined, sort: 'relevance', limit: 10, offset: 0 });
     expect(searchResult.items).toHaveLength(1);
     expect(searchResult.items[0].price).toBe(originalPrice);
 
     await searchService.reindexAll();
 
-    searchResult = await searchService.search({ q: undefined, limit: 10, offset: 0 });
+    searchResult = await searchService.search({ q: undefined, sort: 'relevance', limit: 10, offset: 0 });
     expect(searchResult.items).toHaveLength(1);
     expect(searchResult.items[0].price).toBe(updatedPrice);
   }, 120000);

@@ -18,9 +18,9 @@
                                           "@config/*":  [
                                                              "src/config/*"
                                                          ],
-                                          "@marketplace/contracts/*": [
-                                            "../../packages/contracts/src/*"
-                                          ]
+                                          "@marketplace/contracts/*":  [
+                                                                         "../contracts/dist/*"
+                                                                     ]
                                        },
                             "incremental":  true,
                             "strict":  true,
@@ -29,7 +29,6 @@
                             "noUnusedParameters":  true
                         },
     "include":  [
-                    "src/**/*.ts",
-                    "test/**/*.ts"
+                    "src/**/*.ts"
                 ]
 }

@@ -47,7 +47,7 @@ export class CatalogController {
   constructor(
     private readonly catalogService: CatalogService,
     private readonly publisher: EventPublisher,
-  ) {}
+  ) { }
 
   @Post('categories')
   @UseGuards(JwtGatewayGuard, SellerGuard)

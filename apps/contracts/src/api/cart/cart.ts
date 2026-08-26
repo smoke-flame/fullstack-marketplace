@@ -1,6 +1,4 @@
 import { z } from 'zod';
-import { uuidV4Schema } from '../../common/id';
-
 export const cartItemSnapshotSchema = z.object({
   title: z.string().min(1).max(200),
   price: z.number().int().positive(),

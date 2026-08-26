@@ -6,13 +6,17 @@ import { UserCreatedEvent } from './events/user-created.event';
 import { Public } from '@modules/common/decorators/public.decorator';
 import { JwtGatewayGuard } from '@modules/gateway/guards/jwt-gateway.guard';
 import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
-import { loginUserRequestSchema, type LoginResponse } from '@marketplace/contracts/api/auth/login';
-import { refreshTokenRequestSchema } from '@marketplace/contracts/api/auth/refresh';
-import { registerUserRequestSchema, type RegisterUserResponse } from '@marketplace/contracts/api/auth/register';
-import { type MeResponse } from '@marketplace/contracts/api/auth/me';
-import { logoutRequestSchema } from '@marketplace/contracts/api/auth/logout';
-import type { LoginUserRequest } from '@marketplace/contracts/api/auth/login';
-import type { RefreshTokenRequest } from '@marketplace/contracts/api/auth/refresh';
+import {
+  loginUserRequestSchema,
+  type LoginResponse,
+  refreshTokenRequestSchema,
+  registerUserRequestSchema,
+  type RegisterUserResponse,
+  type MeResponse,
+  logoutRequestSchema,
+  type LoginUserRequest,
+  type RefreshTokenRequest,
+} from "@marketplace/contracts/api/auth";
 import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
 import { RateLimitGroup } from '@modules/gateway/decorators/rate-limit-group.decorator';
 

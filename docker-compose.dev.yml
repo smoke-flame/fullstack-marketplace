@@ -13,7 +13,7 @@ services:
       - .:/app
       - /app/node_modules
       - /app/apps/backend/node_modules
-      - /app/packages/contracts/node_modules
+      - /app/apps/contracts/node_modules
 
   web:
     working_dir: /app
@@ -27,5 +27,5 @@ services:
       - .:/app
       - /app/node_modules
       - /app/apps/frontend/node_modules
-      - /app/packages/contracts/node_modules
+      - /app/apps/contracts/node_modules
       - /app/apps/frontend/.next

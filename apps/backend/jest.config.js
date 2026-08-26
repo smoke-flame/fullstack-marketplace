@@ -9,7 +9,12 @@ module.exports = {
   moduleNameMapper: {
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',
     '^@config/(.*)$': '<rootDir>/src/config/$1',
-    '^@marketplace/contracts/(.*)$': '<rootDir>/../../packages/contracts/src/$1',
+    '^@marketplace/contracts/(.*)$': '<rootDir>/../../apps/contracts/src/$1',
+  },
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.test.json'
+    }
   },
   collectCoverageFrom: ['src/**/*.ts', '!src/**/*.dto.ts', '!src/**/*.entity.ts'],
   coverageDirectory: 'coverage',

@@ -28,7 +28,7 @@ describe('Cart price change consistency (Jest)', () => {
     getCart: async (userId: string) => inMemoryCarts.get(userId) ?? null,
     setCart: async (userId: string, cart: any) => { inMemoryCarts.set(userId, JSON.parse(JSON.stringify(cart))); },
     invalidateProduct: async (productId: string, currentPrice?: number, unavailable = false) => {
-      for (const [userId, cart] of inMemoryCarts.entries()) {
+      for (const [_userId, cart] of inMemoryCarts.entries()) {
         const item = cart.items.find((i) => i.productId === productId);
         if (!item) continue;
         item.unavailable = unavailable;
@@ -78,11 +78,11 @@ describe('Cart price change consistency (Jest)', () => {
     });
 
     await prisma.user.create({
-      data: { id: sellerId, email: `seller-${Date.now()}@test.com`, roles: ['buyer', 'seller'], password: 'hashed' },
+      data: { id: sellerId, email: `seller-${Date.now()}@test.com`, roles: ['BUYER', 'SELLER'], password: 'hashed' },
     });
 
     await prisma.user.create({
-      data: { id: buyerId, email: `buyer-${Date.now()}@test.com`, roles: ['buyer'], password: 'hashed' },
+      data: { id: buyerId, email: `buyer-${Date.now()}@test.com`, roles: ['BUYER'], password: 'hashed' },
     });
   });
 

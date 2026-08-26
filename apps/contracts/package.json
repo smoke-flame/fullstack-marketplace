@@ -2,6 +2,7 @@
   "name": "@marketplace/contracts",
   "private": true,
   "version": "0.0.0",
+  "types": "./dist/models/user.d.ts",
   "exports": {
     "./common/id": {
       "types": "./dist/common/id.d.ts",
@@ -106,6 +107,14 @@
     "./api/auth/logout": {
       "types": "./dist/api/auth/logout.d.ts",
       "default": "./dist/api/auth/logout.js"
+    },
+    "./api/auth/index": {
+      "types": "./dist/api/auth/index.d.ts",
+      "default": "./dist/api/auth/index.js"
+    },
+    "./api/auth": {
+      "types": "./dist/api/auth/index.d.ts",
+      "default": "./dist/api/auth/index.js"
     },
     "./api/catalog/categories": {
       "types": "./dist/api/catalog/categories.d.ts",
