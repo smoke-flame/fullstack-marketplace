@@ -4,7 +4,7 @@ describe('Cancel payment E2E', () => {
     const sellerEmail = `seller-cancel-${ts}@example.com`;
     const buyerEmail = `buyer-cancel-${ts}@example.com`;
     const productTitle = `Cypress Cancel Product ${ts}`;
-    const internalKey = Cypress.env('INTERNAL_API_KEY') || 'replace-with-a-secure-internal-key';
+    const internalKey = Cypress.env('INTERNAL_API_KEY') || 'secure-internal-key';
 
     it('order is cancelled when payment fails and notification is sent', () => {
         // Seller register
@@ -79,7 +79,6 @@ describe('Cancel payment E2E', () => {
         cy.url().should('include', '/cart');
         cy.get('[data-test-id="proceed-to-checkout"]').click();
         cy.url().should('include', '/checkout');
-        cy.get('[data-test-id="checkout-pay"]').click();
 
         // Ensure payment will fail for this test run via internal test endpoint
         cy.request({
@@ -95,14 +94,20 @@ describe('Cancel payment E2E', () => {
             expect(response.body.failureProbability).to.eq(1);
         });
 
+        cy.get('[data-test-id="checkout-pay"]').click();
+
         // After payment we should be on orders page
         cy.url().should('include', '/orders');
 
         // Wait up to 90s for the order to reach CANCELLED status with payment_failed reason
         // This assumes PAYMENT_FAILURE_PROBABILITY=1 is set in backend env
-        cy.get('a[data-test-id^="order-link-"]').first().click();
+        cy.get('a[data-test-id^="order-link-"]', { timeout: 10000 }).should('exist');
+        cy.get('a[data-test-id^="order-link-"]').first().then(($link) => cy.visit($link.prop('href')));
         cy.contains('CANCELLED', { timeout: 90000 }).should('exist');
         cy.contains('payment_failed', { timeout: 90000 }).should('exist');
+
+        // Wait for notification consumer to process order.cancelled
+        cy.wait(10000);
 
         // Verify notification was sent in backend console via internal test endpoint
         cy.request({

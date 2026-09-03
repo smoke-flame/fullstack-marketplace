@@ -7,10 +7,15 @@ import { ProductNotFoundException, ProductForbiddenException } from '@modules/co
 import { Internal } from '@modules/common/decorators/internal.decorator';
 import { ZodValidationPipe } from '@modules/common/pipes/zod-validation.pipe';
 import type { GatewayRequest } from '@modules/gateway/middleware/correlation-id.middleware';
-import { setStockRequestSchema, type SetStockRequest, batchStockRequestSchema, type BatchStockResponse } from '@marketplace/contracts/api/inventory/inventory';
+import { setStockRequestSchema, type SetStockRequest, batchStockRequestSchema, type BatchStockResponse, type StockResponse } from '@marketplace/contracts/api/inventory/inventory';
+import { z } from 'zod';
 
 type SetStockBody = SetStockRequest;
 type BatchQuery = { ids: string[] };
+
+const batchStockQuerySchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(100),
+});
 
 @Controller()
 export class InventoryController {
@@ -34,8 +39,18 @@ export class InventoryController {
 
   @Get('stock/:productId')
   @UseGuards(JwtGatewayGuard)
-  async getStock(@Param('productId') productId: string): Promise<any> {
+  async getStock(@Param('productId') productId: string): Promise<StockResponse> {
     return this.inventoryService.getStock(productId);
+  }
+
+  @Get('stock/batch')
+  @UseGuards(JwtGatewayGuard)
+  @UsePipes(new ZodValidationPipe(batchStockQuerySchema))
+  async batchStockForUser(@Query() query: BatchQuery): Promise<BatchStockResponse> {
+    const stocks = await this.inventoryService.getStocks(query.ids);
+    const foundIds = new Set(stocks.map((s) => s.productId));
+    const missing = query.ids.filter((id: string) => !foundIds.has(id));
+    return { stocks, missing };
   }
 
   @Get('internal/stock/batch')

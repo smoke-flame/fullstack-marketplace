@@ -69,6 +69,10 @@ export class PrismaOrderRepository implements OrderRepository {
     return orders.map((o) => this.mapOrder(o));
   }
 
+  async countByBuyerId(buyerId: string): Promise<number> {
+    return this.prisma.order.count({ where: { buyerId } });
+  }
+
   async updateStatus(id: string, status: OrderStatus, reason?: string | null): Promise<OrderEntity> {
     const order = await this.prisma.order.update({
       where: { id },

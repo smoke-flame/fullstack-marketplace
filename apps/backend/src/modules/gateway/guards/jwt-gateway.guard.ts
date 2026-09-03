@@ -6,6 +6,7 @@ import { userRoleSchema } from '@marketplace/contracts/models/user';
 import { IS_PUBLIC } from '@modules/common/decorators/public.decorator';
 import { IS_INTERNAL } from '@modules/common/decorators/internal.decorator';
 import { UnauthorizedException } from '@modules/common/errors/gateway-errors';
+import { env } from '@config/env';
 import type { GatewayRequest } from '../middleware/correlation-id.middleware';
 
 interface JwtClaims {
@@ -30,7 +31,13 @@ export class JwtGatewayGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isInternal) return true;
+    if (isInternal) {
+      const key = request.header('x-internal-key');
+      if (!key || key !== env.INTERNAL_API_KEY) {
+        throw new UnauthorizedException();
+      }
+      return true;
+    }
     const header = request.header('authorization');
     if (!header && isPublic) return true;
     const token = header?.match(/^Bearer\s+(.+)$/i)?.[1];

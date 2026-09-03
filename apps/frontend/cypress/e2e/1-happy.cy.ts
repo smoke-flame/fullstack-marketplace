@@ -84,12 +84,15 @@ describe('Happy path UI E2E', () => {
 
         // After payment we should be on orders page and open the most recent order
         cy.url().should('include', '/orders');
-        cy.get('a[data-test-id^="order-link-"]').first().click();
+        cy.get('a[data-test-id^="order-link-"]', { timeout: 10000 }).should('exist');
+        cy.get('a[data-test-id^="order-link-"]').first().then(($link) => cy.visit($link.prop('href')));
 
         // Wait up to 60s for the order to reach COMPLETED status
         cy.contains('COMPLETED', { timeout: 60000 }).should('exist');
 
-        ;
+        // Wait for review consumer to process order.completed
+        cy.wait(10000);
+
         // Go back to search and open product page to add a review — perform search first
         cy.get('[data-test-id="nav-search"]').click();
         cy.get('[data-test-id="search-input"]').clear().type(productTitle);

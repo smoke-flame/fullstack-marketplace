@@ -54,6 +54,7 @@ export class PrismaSearchRepository implements SearchRepository {
     priceMin?: number;
     priceMax?: number;
     sellerId?: string;
+    sort?: 'relevance' | 'price_asc' | 'price_desc' | 'createdAt_desc';
     limit: number;
     offset: number;
   }): Promise<{ items: SearchDocumentEntity[]; total: number; limit: number; offset: number }> {
@@ -74,12 +75,17 @@ export class PrismaSearchRepository implements SearchRepository {
       ];
     }
 
-    const items = await this.prisma.searchDocument.findMany({
-      where,
-      skip: filters.offset,
-      take: filters.limit,
-      orderBy: { occurredAt: 'desc' },
-    });
+    const orderBy = this.buildOrderBy(filters.sort);
+
+    const [items, total] = await Promise.all([
+      this.prisma.searchDocument.findMany({
+        where,
+        skip: filters.offset,
+        take: filters.limit,
+        orderBy,
+      }),
+      this.prisma.searchDocument.count({ where }),
+    ]);
 
     const [categories, sellers] = await Promise.all([
       this.prisma.category.findMany({ where: { id: { in: items.map((item) => item.categoryId) } }, select: { id: true, title: true } }),
@@ -102,10 +108,41 @@ export class PrismaSearchRepository implements SearchRepository {
         status: doc.status as ProductStatus,
         occurredAt: doc.occurredAt,
       })),
-      total: items.length,
+      total,
       limit: filters.limit,
       offset: filters.offset,
     };
+  }
+
+  async findByProductId(productId: string): Promise<SearchDocumentEntity | null> {
+    const doc = await this.prisma.searchDocument.findUnique({ where: { productId } });
+    if (!doc) return null;
+    return {
+      id: doc.id,
+      productId: doc.productId,
+      title: doc.title,
+      description: doc.description,
+      price: doc.price,
+      currency: doc.currency,
+      categoryId: doc.categoryId,
+      sellerId: doc.sellerId,
+      status: doc.status as ProductStatus,
+      occurredAt: doc.occurredAt,
+    };
+  }
+
+  private buildOrderBy(sort: 'relevance' | 'price_asc' | 'price_desc' | 'createdAt_desc' | undefined): Record<string, 'asc' | 'desc'> {
+    switch (sort) {
+      case 'price_asc':
+        return { price: 'asc' };
+      case 'price_desc':
+        return { price: 'desc' };
+      case 'createdAt_desc':
+        return { occurredAt: 'desc' };
+      case 'relevance':
+      default:
+        return { occurredAt: 'desc' };
+    }
   }
 
   async reindex(products: Array<{

@@ -157,6 +157,19 @@ export class PrismaCatalogRepository implements CategoryRepository, ProductRepos
     return products.map((p) => this.mapProduct(p));
   }
 
+  async countProducts(filters?: {
+    categoryId?: string;
+    sellerId?: string;
+    status?: ProductStatus;
+  }): Promise<number> {
+    const where: Record<string, unknown> = {};
+    if (filters?.categoryId) where.categoryId = filters.categoryId;
+    if (filters?.sellerId) where.sellerId = filters.sellerId;
+    if (filters?.status) where.status = filters.status;
+
+    return this.prisma.product.count({ where });
+  }
+
   private mapProduct(product: {
     id: string;
     sellerId: string;

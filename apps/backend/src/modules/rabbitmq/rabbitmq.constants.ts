@@ -37,6 +37,23 @@ export const RABBITMQ_REVIEW_DELETED_CLIENT = 'REVIEW_DELETED_CLIENT';
 export const RABBITMQ_DLQ_CLIENT = 'DLQ_CLIENT';
 export const RABBITMQ_DLQ_REPLAY_CLIENT = 'DLQ_REPLAY_CLIENT';
 
+// Dedicated per-consumer queue names
+export const QUEUE_CART_PRODUCT_UPDATED = 'cart.product.updated';
+export const QUEUE_SEARCH_PRODUCT_UPDATED = 'search.product.updated';
+export const QUEUE_CART_PRODUCT_ARCHIVED = 'cart.product.archived';
+export const QUEUE_SEARCH_PRODUCT_ARCHIVED = 'search.product.archived';
+export const QUEUE_INVENTORY_ORDER_COMPLETED = 'inventory.order.completed';
+export const QUEUE_REVIEWS_ORDER_COMPLETED = 'reviews.order.completed';
+export const QUEUE_NOTIFICATION_ORDER_COMPLETED = 'notification.order.completed';
+
+export const RABBITMQ_CART_PRODUCT_UPDATED_CLIENT = 'CART_PRODUCT_UPDATED_CLIENT';
+export const RABBITMQ_SEARCH_PRODUCT_UPDATED_CLIENT = 'SEARCH_PRODUCT_UPDATED_CLIENT';
+export const RABBITMQ_CART_PRODUCT_ARCHIVED_CLIENT = 'CART_PRODUCT_ARCHIVED_CLIENT';
+export const RABBITMQ_SEARCH_PRODUCT_ARCHIVED_CLIENT = 'SEARCH_PRODUCT_ARCHIVED_CLIENT';
+export const RABBITMQ_INVENTORY_ORDER_COMPLETED_CLIENT = 'INVENTORY_ORDER_COMPLETED_CLIENT';
+export const RABBITMQ_REVIEWS_ORDER_COMPLETED_CLIENT = 'REVIEWS_ORDER_COMPLETED_CLIENT';
+export const RABBITMQ_NOTIFICATION_ORDER_COMPLETED_CLIENT = 'NOTIFICATION_ORDER_COMPLETED_CLIENT';
+
 export const DLQ_NAME = 'notification.dlq';
 export const DLQ_REPLAY_NAME = 'notification.dlq.replay';
 export const PAYMENT_DLQ_NAME = 'payment.dlq';

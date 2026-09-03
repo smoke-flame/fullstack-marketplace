@@ -7,7 +7,7 @@ import { Button } from '@/shared/ui/button';
 import Link from 'next/link';
 import { Input } from '@/shared/ui/input';
 import { toast } from '@/shared/ui/toast';
-import { getStock, setStock } from '@/modules/inventory/api';
+import { getStocks, setStock } from '@/modules/inventory/api';
 import { getAllProducts } from '@/modules/catalog/api';
 import type { StockResponse } from '@marketplace/contracts/api/inventory/inventory';
 import type { PaginatedProductsResponse } from '@marketplace/contracts/api/catalog/products';
@@ -31,16 +31,21 @@ export function InventoryPage() {
   useEffect(() => {
     if (!productsResult.data) return;
     setProducts(productsResult.data);
-    Promise.all(
-      productsResult.data.items.map(async (p) => ({
-        productId: p.id,
-        stock: await getStock(p.id),
-      }))
-    ).then((stockData) => {
-      const map = new Map<string, StockResponse>();
-      stockData.forEach((s) => map.set(s.productId, s.stock));
-      setStocks(map);
-    }).catch(() => { });
+    const productIds = productsResult.data.items.map((p) => p.id);
+    if (productIds.length === 0) {
+      setStocks(new Map());
+      return;
+    }
+    let cancelled = false;
+    getStocks(productIds)
+      .then((result) => {
+        if (cancelled) return;
+        const map = new Map<string, StockResponse>();
+        for (const stock of result.stocks) map.set(stock.productId, stock);
+        setStocks(map);
+      })
+      .catch(() => { });
+    return () => { cancelled = true; };
   }, [productsResult.data]);
 
   const {

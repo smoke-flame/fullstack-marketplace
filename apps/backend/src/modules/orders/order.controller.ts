@@ -41,9 +41,9 @@ export class OrderController {
 
   @Get('orders/:id')
   @UseGuards(JwtGatewayGuard)
-  async findOrderById(@Param('id') id: string): Promise<OrderResponse> {
+  async findOrderById(@Param('id') id: string, @Req() request: GatewayRequest): Promise<OrderResponse> {
     const order = await this.orderService.findById(id);
-    if (!order) {
+    if (!order || order.buyerId !== request.user!.id) {
       throw new OrderNotFoundException();
     }
     return order;

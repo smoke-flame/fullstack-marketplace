@@ -16,6 +16,7 @@ describe('Payment timeout resilience (Jest)', () => {
   let inventoryService: InventoryService;
   let testProductId: string;
   let testBuyerId: string;
+  let testCategoryId: string;
   const SAGA_TIMEOUT_MS = 60000;
 
   beforeAll(async () => {
@@ -25,7 +26,7 @@ describe('Payment timeout resilience (Jest)', () => {
     const orderRepo = new PrismaOrderRepository(prisma);
     const inventoryRepo = new PrismaInventoryRepository(prisma);
     inventoryService = new InventoryService(inventoryRepo);
-    orderService = new OrderService(orderRepo);
+    orderService = new OrderService(orderRepo, prisma);
   });
 
   afterAll(async () => {
@@ -33,8 +34,23 @@ describe('Payment timeout resilience (Jest)', () => {
   });
 
   beforeEach(async () => {
+    testCategoryId = uuidv4();
     testProductId = `test-product-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     testBuyerId = uuidv4();
+    await prisma.category.create({
+      data: { id: testCategoryId, title: 'Test Category', parentId: null },
+    });
+    await prisma.product.create({
+      data: {
+        id: testProductId,
+        sellerId: uuidv4(),
+        categoryId: testCategoryId,
+        title: 'Test Product',
+        price: 25,
+        currency: 'UAH',
+        status: 'ACTIVE',
+      },
+    });
     await prisma.stock.create({
       data: { productId: testProductId, onHand: 10, reserved: 0 },
     });
@@ -44,6 +60,8 @@ describe('Payment timeout resilience (Jest)', () => {
     await prisma.reservation.deleteMany({ where: { productId: testProductId } });
     await prisma.stock.deleteMany({ where: { productId: testProductId } });
     await prisma.order.deleteMany({ where: { buyerId: testBuyerId } });
+    await prisma.product.deleteMany({ where: { id: testProductId } });
+    await prisma.category.deleteMany({ where: { id: testCategoryId } });
     await prisma.sagaState.deleteMany({});
   });
 

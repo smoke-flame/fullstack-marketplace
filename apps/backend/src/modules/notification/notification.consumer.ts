@@ -1,7 +1,11 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, Ctx, Payload, RmqContext } from '@nestjs/microservices';
 import { NotificationService } from './notification.service';
-import { RabbitMQEventType, RabbitMQCommandType } from '@modules/rabbitmq/rabbitmq.constants';
+import {
+  RabbitMQEventType,
+  RabbitMQCommandType,
+  QUEUE_NOTIFICATION_ORDER_COMPLETED,
+} from '@modules/rabbitmq/rabbitmq.constants';
 import { UserCreatedEvent } from '@modules/auth/events/user-created.event';
 import { OrderCompletedEvent } from '../orders/events/order.completed.event';
 import { OrderCancelledEvent } from '../orders/events/order.cancelled.event';
@@ -35,7 +39,7 @@ export class NotificationConsumer {
     }
   }
 
-  @EventPattern(RabbitMQEventType.ORDER_COMPLETED)
+  @EventPattern(QUEUE_NOTIFICATION_ORDER_COMPLETED)
   async handleOrderCompleted(@Payload() event: OrderCompletedEvent, @Ctx() context: RmqContext) {
     this.logger.log(`Consumed order.completed [${event.correlationId}] for order ${event.payload.orderId}`);
     try {

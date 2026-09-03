@@ -61,6 +61,11 @@ export interface ProductRepository {
     limit?: number;
     offset?: number;
   }): Promise<ProductEntity[]>;
+  countProducts?(filters?: {
+    categoryId?: string;
+    sellerId?: string;
+    status?: ProductStatus;
+  }): Promise<number>;
 }
 
 export const CATEGORY_REPOSITORY = Symbol('CATEGORY_REPOSITORY');

@@ -16,16 +16,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const isGetRequest = (config.method ?? 'get').toUpperCase() === 'GET';
-    const isPublicRequest = isGetRequest && (
-      config.url === '/search'
-      || config.url?.startsWith('/search?')
-      || config.url === '/categories'
-      || config.url?.startsWith('/categories?')
-      || config.url === '/products'
-      || config.url?.startsWith('/products/')
-    );
-    if (typeof window !== 'undefined' && !isPublicRequest) {
+    if (typeof window !== 'undefined') {
       const token = getAccessToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;

@@ -3,6 +3,7 @@ import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import { ReviewsService } from './reviews.service';
 import { OrderCompletedEvent } from '../orders/events/order.completed.event';
 import { EventIdempotencyService } from '@modules/common/event-idempotency.service';
+import { QUEUE_REVIEWS_ORDER_COMPLETED } from '@modules/rabbitmq/rabbitmq.constants';
 
 @Controller()
 export class ReviewsConsumer {
@@ -13,7 +14,7 @@ export class ReviewsConsumer {
     private readonly idempotency: EventIdempotencyService,
   ) { }
 
-  @EventPattern('order.completed')
+  @EventPattern(QUEUE_REVIEWS_ORDER_COMPLETED)
   async onOrderCompleted(@Payload() event: OrderCompletedEvent, @Ctx() context: RmqContext) {
     this.logger.log(`Consumed order.completed [${event.correlationId}] for order ${event.payload.orderId}`);
     try {

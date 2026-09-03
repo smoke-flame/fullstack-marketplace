@@ -3,11 +3,9 @@ RUN corepack enable
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml ./
 COPY apps/frontend/package.json apps/frontend/package.json
-COPY packages/eslint-config/package.json packages/eslint-config/package.json
 COPY apps/contracts/package.json apps/contracts/package.json
 RUN pnpm install --frozen-lockfile=false
 COPY apps/frontend apps/frontend
-COPY packages/eslint-config packages/eslint-config
 COPY apps/contracts apps/contracts
 RUN pnpm --filter @marketplace/contracts build
 WORKDIR /app/apps/frontend

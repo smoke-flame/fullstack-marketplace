@@ -1,8 +1,7 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { NotificationConsumer } from './notification.consumer';
 import { NotificationTestController } from './notification.test.controller';
-import { RabbitmqModule } from '@modules/rabbitmq/rabbitmq.module';
 import { NotificationDlqService } from './notification.dlq';
 import { UserCreatedTemplate } from './templates/user-created.template';
 import { OrderCompletedTemplate } from './templates/order-completed.template';
@@ -10,7 +9,6 @@ import { OrderCancelledTemplate } from './templates/order-cancelled.template';
 import { NotificationSendTemplate } from './templates/notification-send.template';
 
 @Module({
-  imports: [forwardRef(() => RabbitmqModule)],
   providers: [
     NotificationService,
     NotificationDlqService,
@@ -22,4 +20,4 @@ import { NotificationSendTemplate } from './templates/notification-send.template
   controllers: [NotificationConsumer, NotificationTestController],
   exports: [NotificationService, NotificationDlqService],
 })
-export class NotificationModule { }
+export class NotificationModule {}

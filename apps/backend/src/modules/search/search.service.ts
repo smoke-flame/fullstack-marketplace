@@ -20,6 +20,7 @@ export class SearchService {
       priceMin: filters.priceMin,
       priceMax: filters.priceMax,
       sellerId: filters.sellerId,
+      sort: filters.sort,
       limit: filters.limit,
       offset: filters.offset,
     });
@@ -101,9 +102,8 @@ export class SearchService {
   }
 
   async indexUpdated(payload: ProductUpdatedPayload, occurredAt: Date): Promise<void> {
-    const existing = await this.repo.search({ q: undefined, limit: 1, offset: 0 });
-    const doc = existing.items.find((item) => item.productId === payload.productId);
-    if (doc && occurredAt <= doc.occurredAt) return;
+    const existing = await this.repo.findByProductId(payload.productId);
+    if (existing && occurredAt <= existing.occurredAt) return;
     await this.repo.upsert({
       productId: payload.productId,
       title: payload.title,

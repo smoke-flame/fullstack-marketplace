@@ -4,7 +4,18 @@ import { MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 import { env } from './config/env';
 import { validationExceptionFactory } from './modules/common/errors/validation-error';
-import { RabbitMQEventType, RabbitMQCommandType, createRmqOptions } from './modules/rabbitmq/rabbitmq.constants';
+import {
+  RabbitMQEventType,
+  RabbitMQCommandType,
+  createRmqOptions,
+  QUEUE_CART_PRODUCT_UPDATED,
+  QUEUE_SEARCH_PRODUCT_UPDATED,
+  QUEUE_CART_PRODUCT_ARCHIVED,
+  QUEUE_SEARCH_PRODUCT_ARCHIVED,
+  QUEUE_INVENTORY_ORDER_COMPLETED,
+  QUEUE_REVIEWS_ORDER_COMPLETED,
+  QUEUE_NOTIFICATION_ORDER_COMPLETED,
+} from './modules/rabbitmq/rabbitmq.constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -26,8 +37,14 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.USER_CREATED, false));
   app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.PRODUCT_CREATED, false));
   app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.PRODUCT_UPDATED, false));
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(QUEUE_CART_PRODUCT_UPDATED, false));
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(QUEUE_SEARCH_PRODUCT_UPDATED, false));
   app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.PRODUCT_ARCHIVED, false));
-  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.ORDER_COMPLETED, false));
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(QUEUE_CART_PRODUCT_ARCHIVED, false));
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(QUEUE_SEARCH_PRODUCT_ARCHIVED, false));
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(QUEUE_INVENTORY_ORDER_COMPLETED, false));
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(QUEUE_REVIEWS_ORDER_COMPLETED, false));
+  app.connectMicroservice<MicroserviceOptions>(createRmqOptions(QUEUE_NOTIFICATION_ORDER_COMPLETED, false));
   app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.ORDER_CANCELLED, false));
   app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.ORDER_CREATED, false));
   app.connectMicroservice<MicroserviceOptions>(createRmqOptions(RabbitMQEventType.INVENTORY_RESERVED, false));

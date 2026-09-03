@@ -94,15 +94,24 @@ export class CatalogService {
     const limit = filters?.limit ?? 20;
     const offset = filters?.offset ?? 0;
 
-    const products = await this.productRepo.findAllProducts({
-      ...filters,
-      limit,
-      offset,
-    });
+    const [products, count] = await Promise.all([
+      this.productRepo.findAllProducts({
+        ...filters,
+        limit,
+        offset,
+      }),
+      this.productRepo.countProducts
+        ? this.productRepo.countProducts({
+            categoryId: filters?.categoryId,
+            sellerId: filters?.sellerId,
+            status: filters?.status,
+          })
+        : Promise.resolve(0),
+    ]);
 
     return {
       items: products,
-      total: products.length,
+      total: count > 0 ? count : products.length,
       limit,
       offset,
     };

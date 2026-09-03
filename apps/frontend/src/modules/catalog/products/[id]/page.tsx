@@ -43,13 +43,14 @@ export function ProductDetailPage() {
   const [categoriesLoading, setCategoriesLoading] = useState(false);
   const user = useAppSelector((state) => state.user.user);
   const [reviewsVersion, setReviewsVersion] = useState(0);
+  const [productVersion, setProductVersion] = useState(0);
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<UpdateProductRequest>({
     resolver: zodResolver(updateProductRequestSchema),
   });
 
   const { data: product, loading } = useAsync(
     () => getProductById(id),
-    [id],
+    [id, productVersion],
   );
 
   useEffect(() => {
@@ -70,10 +71,11 @@ export function ProductDetailPage() {
 
   const handleUpdate = async (data: UpdateProductRequest) => {
     try {
-      await updateProduct(id, data);
+      const updated = await updateProduct(id, data);
       toast.success('Product updated');
       setEditing(false);
-      window.location.reload();
+      setProductVersion((v) => v + 1);
+      void updated;
     } catch {
       // error handled by interceptor
     }
@@ -84,7 +86,8 @@ export function ProductDetailPage() {
     setAdding(true);
     try {
       const cart = await upsertItem(product.id, { qty });
-      dispatch(upsertCartItem(cart.items.find((i) => i.productId === product.id)!));
+      const item = cart.items.find((i) => i.productId === product.id);
+      if (item) dispatch(upsertCartItem(item));
       toast.success('Added to cart');
     } catch {
       // error handled by interceptor

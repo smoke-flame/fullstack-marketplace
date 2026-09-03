@@ -23,16 +23,19 @@ export class PrismaReviewRepository implements ReviewRepository {
   async findByProductId(productId: string, limit: number, offset: number): Promise<Omit<PaginatedReviewsResponse, 'limit' | 'offset'>> {
     const where: Record<string, unknown> = { productId };
 
-    const reviews = await this.prisma.review.findMany({
-      where,
-      take: limit,
-      skip: offset,
-      orderBy: { createdAt: 'desc' },
-    });
+    const [reviews, total] = await Promise.all([
+      this.prisma.review.findMany({
+        where,
+        take: limit,
+        skip: offset,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.review.count({ where }),
+    ]);
 
     return {
       items: reviews.map(this.mapReview),
-      total: reviews.length,
+      total,
     };
   }
 

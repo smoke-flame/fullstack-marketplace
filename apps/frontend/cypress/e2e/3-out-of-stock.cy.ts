@@ -4,7 +4,7 @@ describe('Out of stock E2E', () => {
     const sellerEmail = `seller-stock-${ts}@example.com`;
     const buyerEmail = `buyer-stock-${ts}@example.com`;
     const productTitle = `Cypress Stock Product ${ts}`;
-    const internalKey = Cypress.env('INTERNAL_API_KEY') || 'replace-with-a-secure-internal-key';
+    const internalKey = Cypress.env('INTERNAL_API_KEY') || 'secure-internal-key';
 
     it('order is cancelled when inventory is rejected and notification is sent', () => {
         // Seller register
@@ -90,9 +90,13 @@ describe('Out of stock E2E', () => {
         cy.url().should('include', '/orders');
 
         // Wait up to 90s for the order to reach CANCELLED status with inventory_rejected reason
-        cy.get('a[data-test-id^="order-link-"]').first().click();
+        cy.get('a[data-test-id^="order-link-"]', { timeout: 10000 }).should('exist');
+        cy.get('a[data-test-id^="order-link-"]').first().then(($link) => cy.visit($link.prop('href')));
         cy.contains('CANCELLED', { timeout: 90000 }).should('exist');
         cy.contains('inventory_rejected', { timeout: 90000 }).should('exist');
+
+        // Wait for notification consumer to process order.cancelled
+        cy.wait(10000);
 
         // Verify notification was sent in backend console via internal test endpoint
         cy.request({

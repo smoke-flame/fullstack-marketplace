@@ -9,6 +9,8 @@ import { CartRepository, CART_REPOSITORY } from '@modules/cart/repositories/cart
 import { OrderService } from '@modules/orders/order.service';
 import { PrismaOrderRepository } from '@modules/orders/repositories/order.repository.prisma';
 import { ORDER_REPOSITORY } from '@modules/orders/repositories/order.repository';
+import { PrismaUserRepository } from '@modules/users/user.repository.prisma';
+import { USER_REPOSITORY } from '@modules/users/user.repository';
 import { v4 as uuidv4 } from 'uuid';
 
 describe('Cart price change consistency (Jest)', () => {
@@ -48,6 +50,8 @@ describe('Cart price change consistency (Jest)', () => {
         PrismaCatalogRepository,
         { provide: CATEGORY_REPOSITORY, useClass: PrismaCatalogRepository },
         { provide: PRODUCT_REPOSITORY, useClass: PrismaCatalogRepository },
+        PrismaUserRepository,
+        { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
         CartService,
         { provide: CART_REPOSITORY, useValue: mockCartRepository },
         OrderService,
@@ -114,7 +118,7 @@ describe('Cart price change consistency (Jest)', () => {
     expect(cart.items).toHaveLength(1);
     expect(cart.items[0].snapshot.price).toBe(originalPrice);
     expect(cart.items[0].priceChanged).toBe(false);
-    expect(cart.items[0].currentPrice).toBeUndefined();
+    expect(cart.items[0].currentPrice).toBe(originalPrice);
 
     await catalogService.updateProduct(testProductId, sellerId, {
       price: updatedPrice,

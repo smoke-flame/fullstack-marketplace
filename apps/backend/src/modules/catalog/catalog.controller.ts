@@ -120,7 +120,7 @@ export class CatalogController {
 
   @Patch('products/:id')
   @RateLimitGroup('catalog')
-  @UseGuards(JwtGatewayGuard)
+  @UseGuards(JwtGatewayGuard, SellerGuard)
   async updateProduct(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(updateProductRequestSchema)) body: UpdateProductRequest,
@@ -143,7 +143,7 @@ export class CatalogController {
 
   @Delete('products/:id')
   @RateLimitGroup('catalog')
-  @UseGuards(JwtGatewayGuard)
+  @UseGuards(JwtGatewayGuard, SellerGuard)
   async archiveProduct(@Param('id') id: string, @Req() request: GatewayRequest): Promise<ProductResponse> {
     const product = await this.catalogService.archiveProduct(id, request.user!.id);
     await this.publisher.publish(new ProductArchivedEvent({ productId: product.id }, request.correlationId));

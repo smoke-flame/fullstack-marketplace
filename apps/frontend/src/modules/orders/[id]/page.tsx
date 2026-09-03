@@ -10,12 +10,14 @@ import type { OrderResponse } from '@marketplace/contracts/api/orders/orders';
 import { useAsync } from '@/shared/hooks';
 import { getProductById } from '@/modules/catalog/api';
 import { useAppSelector } from '@/shared/hooks';
+import type { ProductResponse } from '@marketplace/contracts/api/catalog/products';
 
 export function OrderDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [order, setOrder] = useState<OrderResponse | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [productTitles, setProductTitles] = useState<Map<string, string>>(new Map());
   const currentUserId = useAppSelector((s) => s.user.user?.id ?? null);
 
   const { loading } = useAsync(
@@ -27,6 +29,31 @@ export function OrderDetailPage() {
     if (order) return;
     getOrderById(id).then(setOrder).catch(() => { });
   }, [id, order]);
+
+  useEffect(() => {
+    if (!order) return;
+    const productIds = Array.from(new Set(order.items.map((i) => i.productId)));
+    if (productIds.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      productIds.map(async (productId): Promise<[string, string | null]> => {
+        try {
+          const product: ProductResponse = await getProductById(productId);
+          return [productId, product.title];
+        } catch {
+          return [productId, null];
+        }
+      }),
+    ).then((entries) => {
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      for (const [pid, title] of entries) {
+        if (title) map.set(pid, title);
+      }
+      setProductTitles(map);
+    });
+    return () => { cancelled = true; };
+  }, [order]);
 
   // Poll order status every 2s until terminal (COMPLETED / CANCELLED / FAILED / PAID)
   const pollRef = useRef<number | null>(null);
@@ -127,7 +154,7 @@ export function OrderDetailPage() {
           <ul className="mt-4 space-y-2">
             {order.items.map((item, idx) => (
               <li key={idx} className="flex items-center justify-between rounded border p-3">
-                <ProductTitle productId={item.productId} />
+                <span className="font-medium">{productTitles.get(item.productId) ?? 'Product'}</span>
                 <span className="text-sm">Qty: {item.qty}</span>
                 <span className="text-sm font-medium">${item.price}</span>
               </li>
@@ -160,10 +187,4 @@ export function OrderDetailPage() {
       </div>
     </div>
   );
-}
-
-function ProductTitle({ productId }: { productId: string }) {
-  const { data: product, loading } = useAsync(() => getProductById(productId), [productId]);
-  if (loading) return <span className="text-sm text-muted-foreground">Loading...</span>;
-  return <span className="font-medium">{product?.title ?? 'Product'}</span>;
 }

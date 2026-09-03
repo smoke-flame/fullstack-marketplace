@@ -1,7 +1,8 @@
 import { Controller, Post, Query, Body, Logger } from '@nestjs/common';
 import { Internal } from '@modules/common/decorators/internal.decorator';
-import { NotificationDlqService } from '@modules/notification/notification.dlq';
+import { NotificationDlqService, type NotificationDlqPayload } from '@modules/notification/notification.dlq';
 import { PaymentDlqService } from '@modules/payment/payment.dlq';
+import type { PaymentDlqPayload } from '@modules/payment/events/payment-dlq.event';
 
 interface DlqReplayMessage {
   dlqType: 'notification' | 'payment';
@@ -39,9 +40,9 @@ export class DlqController {
     for (const message of messages) {
       try {
         if (message.dlqType === 'notification') {
-          await this.notificationDlq.replayNotificationDlq(message.payload as any);
+          await this.notificationDlq.replayNotificationDlq(message.payload as unknown as NotificationDlqPayload);
         } else if (message.dlqType === 'payment') {
-          await this.paymentDlq.replayPaymentDlq(message.payload as any);
+          await this.paymentDlq.replayPaymentDlq(message.payload as unknown as PaymentDlqPayload);
         } else {
           this.logger.warn(`Unknown dlqType in DLQ message: ${message.dlqType}`);
           failed++;

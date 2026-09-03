@@ -5,6 +5,7 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/test'],
   testMatch: ['**/*.test.ts', '**/*.spec.ts'],
+  globalSetup: '<rootDir>/test/e2e/jest/global-setup.js',
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: {
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',

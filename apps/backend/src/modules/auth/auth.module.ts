@@ -5,11 +5,13 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '@modules/users/user.module';
 import { CommonModule } from '@modules/common/common.module';
+import { RabbitmqModule } from '@modules/rabbitmq/rabbitmq.module';
 
 @Module({
   imports: [
     CommonModule,
     UsersModule,
+    RabbitmqModule,
     JwtModule.register({
       global: true,
       secret: env.JWT_ACCESS_SECRET,

@@ -32,9 +32,11 @@ export interface SearchRepository {
     priceMin?: number;
     priceMax?: number;
     sellerId?: string;
+    sort?: 'relevance' | 'price_asc' | 'price_desc' | 'createdAt_desc';
     limit: number;
     offset: number;
   }): Promise<{ items: SearchDocumentEntity[]; total: number; limit: number; offset: number }>;
+  findByProductId(productId: string): Promise<SearchDocumentEntity | null>;
   reindex(products: Array<{
     id: string;
     title: string;

@@ -1,4 +1,4 @@
-import { Global, Module, forwardRef } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { EventPublisher } from './event-publisher';
 import { DlqController } from './dlq.controller';
@@ -13,7 +13,6 @@ import {
   RABBITMQ_PRODUCT_UPDATED_CLIENT,
   RABBITMQ_PRODUCT_ARCHIVED_CLIENT,
   RABBITMQ_ORDER_CREATED_CLIENT,
-  RABBITMQ_ORDER_COMPLETED_CLIENT,
   RABBITMQ_ORDER_CANCELLED_CLIENT,
   RABBITMQ_INVENTORY_RESERVE_CLIENT,
   RABBITMQ_INVENTORY_RELEASE_CLIENT,
@@ -31,6 +30,20 @@ import {
   RABBITMQ_DLQ_CLIENT,
   RABBITMQ_DLQ_REPLAY_CLIENT,
   RABBITMQ_PAYMENT_DLQ_CLIENT,
+  RABBITMQ_CART_PRODUCT_UPDATED_CLIENT,
+  RABBITMQ_SEARCH_PRODUCT_UPDATED_CLIENT,
+  RABBITMQ_CART_PRODUCT_ARCHIVED_CLIENT,
+  RABBITMQ_SEARCH_PRODUCT_ARCHIVED_CLIENT,
+  RABBITMQ_INVENTORY_ORDER_COMPLETED_CLIENT,
+  RABBITMQ_REVIEWS_ORDER_COMPLETED_CLIENT,
+  RABBITMQ_NOTIFICATION_ORDER_COMPLETED_CLIENT,
+  QUEUE_CART_PRODUCT_UPDATED,
+  QUEUE_SEARCH_PRODUCT_UPDATED,
+  QUEUE_CART_PRODUCT_ARCHIVED,
+  QUEUE_SEARCH_PRODUCT_ARCHIVED,
+  QUEUE_INVENTORY_ORDER_COMPLETED,
+  QUEUE_REVIEWS_ORDER_COMPLETED,
+  QUEUE_NOTIFICATION_ORDER_COMPLETED,
   DLQ_NAME,
   PAYMENT_DLQ_NAME,
 } from './rabbitmq.constants';
@@ -38,8 +51,8 @@ import {
 @Global()
 @Module({
   imports: [
-    forwardRef(() => NotificationModule),
-    forwardRef(() => PaymentModule),
+    NotificationModule,
+    PaymentModule,
     ClientsModule.register([
       {
         name: RABBITMQ_USER_CREATED_CLIENT,
@@ -54,16 +67,40 @@ import {
         ...createRmqOptions(RabbitMQEventType.PRODUCT_UPDATED),
       },
       {
+        name: RABBITMQ_CART_PRODUCT_UPDATED_CLIENT,
+        ...createRmqOptions(QUEUE_CART_PRODUCT_UPDATED),
+      },
+      {
+        name: RABBITMQ_SEARCH_PRODUCT_UPDATED_CLIENT,
+        ...createRmqOptions(QUEUE_SEARCH_PRODUCT_UPDATED),
+      },
+      {
         name: RABBITMQ_PRODUCT_ARCHIVED_CLIENT,
         ...createRmqOptions(RabbitMQEventType.PRODUCT_ARCHIVED),
+      },
+      {
+        name: RABBITMQ_CART_PRODUCT_ARCHIVED_CLIENT,
+        ...createRmqOptions(QUEUE_CART_PRODUCT_ARCHIVED),
+      },
+      {
+        name: RABBITMQ_SEARCH_PRODUCT_ARCHIVED_CLIENT,
+        ...createRmqOptions(QUEUE_SEARCH_PRODUCT_ARCHIVED),
       },
       {
         name: RABBITMQ_ORDER_CREATED_CLIENT,
         ...createRmqOptions(RabbitMQEventType.ORDER_CREATED),
       },
       {
-        name: RABBITMQ_ORDER_COMPLETED_CLIENT,
-        ...createRmqOptions(RabbitMQEventType.ORDER_COMPLETED),
+        name: RABBITMQ_INVENTORY_ORDER_COMPLETED_CLIENT,
+        ...createRmqOptions(QUEUE_INVENTORY_ORDER_COMPLETED),
+      },
+      {
+        name: RABBITMQ_REVIEWS_ORDER_COMPLETED_CLIENT,
+        ...createRmqOptions(QUEUE_REVIEWS_ORDER_COMPLETED),
+      },
+      {
+        name: RABBITMQ_NOTIFICATION_ORDER_COMPLETED_CLIENT,
+        ...createRmqOptions(QUEUE_NOTIFICATION_ORDER_COMPLETED),
       },
       {
         name: RABBITMQ_ORDER_CANCELLED_CLIENT,
@@ -139,4 +176,4 @@ import {
   controllers: [DlqController],
   exports: [EventPublisher],
 })
-export class RabbitmqModule { }
+export class RabbitmqModule {}

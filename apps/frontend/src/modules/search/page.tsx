@@ -39,6 +39,7 @@ export function SearchPage() {
   const [addingProductId, setAddingProductId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [categoriesVersion, setCategoriesVersion] = useState(0);
+  const [resultsVersion, setResultsVersion] = useState(0);
   const { data: categoryData } = useAsync(getAllCategories, [categoriesVersion]);
   const categories = categoryData ?? [];
   const user = useAppSelector((state) => state.user.user);
@@ -47,6 +48,22 @@ export function SearchPage() {
 
   const limit = 20;
   const totalPages = results ? Math.max(1, Math.ceil(results.total / limit)) : 1;
+
+  useEffect(() => {
+    let active = true;
+    search({ sort, limit, offset: 0 })
+      .then((data) => {
+        if (active) {
+          setResults(data);
+          setInitialLoading(false);
+        }
+      })
+      .catch(() => { })
+      .finally(() => {
+        if (active) setInitialLoading(false);
+      });
+    return () => { active = false; };
+  }, [sort, resultsVersion]);
 
   const handleAddToCart = async (event: React.MouseEvent, productId: string) => {
     event.preventDefault();
@@ -89,19 +106,6 @@ export function SearchPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    let active = true;
-    search({ sort: 'relevance', limit, offset: 0 })
-      .then((data) => {
-        if (active) setResults(data);
-      })
-      .catch(() => { })
-      .finally(() => {
-        if (active) setInitialLoading(false);
-      });
-    return () => { active = false; };
-  }, []);
 
   const clearFilters = () => {
     setCategoryId('');
@@ -357,10 +361,10 @@ export function SearchPage() {
         </div>
       </div>
       {showProductModal && (
-        <CreateProductModal categories={categories} onClose={() => setShowProductModal(false)} onCreated={() => {}} />
+        <CreateProductModal categories={categories} onClose={() => setShowProductModal(false)} onCreated={() => { setResultsVersion((v) => v + 1); setCategoriesVersion((v) => v + 1); }} />
       )}
       {showCategoryModal && (
-        <CreateCategoryModal categories={categories} onClose={() => setShowCategoryModal(false)} onCreated={() => setCategoriesVersion((version) => version + 1)} />
+        <CreateCategoryModal categories={categories} onClose={() => setShowCategoryModal(false)} onCreated={() => { setCategoriesVersion((version) => version + 1); setResultsVersion((v) => v + 1); }} />
       )}
     </main>
   );

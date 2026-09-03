@@ -21,6 +21,7 @@ export interface OrderRepository {
   }): Promise<OrderEntity>;
   findById(id: string): Promise<OrderEntity | null>;
   findByBuyerId(buyerId: string, limit: number, offset: number): Promise<OrderEntity[]>;
+  countByBuyerId?(buyerId: string): Promise<number>;
   updateStatus(id: string, status: OrderStatus, reason?: string | null): Promise<OrderEntity>;
   addTimelineEntry(orderId: string, status: OrderStatus, reason?: string | null): Promise<void>;
   findActiveOrderForBuyer(buyerId: string): Promise<OrderEntity | null>;

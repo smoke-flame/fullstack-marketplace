@@ -34,7 +34,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@marketplace/eslint-config": "workspace:*",
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
     "@nestjs/testing": "^10.4.22",

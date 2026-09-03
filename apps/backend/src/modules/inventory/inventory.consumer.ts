@@ -5,6 +5,8 @@ import { EventPublisher } from '@modules/rabbitmq/event-publisher';
 import { InventoryReservedEvent, InventoryRejectedEvent } from './events/inventory.events';
 import { EventIdempotencyService } from '@modules/common/event-idempotency.service';
 
+import { QUEUE_INVENTORY_ORDER_COMPLETED } from '@modules/rabbitmq/rabbitmq.constants';
+
 @Controller()
 export class InventoryConsumer {
   private readonly logger = new Logger(InventoryConsumer.name);
@@ -66,7 +68,7 @@ export class InventoryConsumer {
     }
   }
 
-  @EventPattern('order.completed')
+  @EventPattern(QUEUE_INVENTORY_ORDER_COMPLETED)
   async onOrderCompleted(@Payload() event: { eventId: string; payload: { orderId: string; items: Array<{ productId: string; qty: number }> }; correlationId: string }, @Ctx() context: RmqContext) {
     try {
       if (await this.idempotency.isProcessed('inventory', event.eventId)) {

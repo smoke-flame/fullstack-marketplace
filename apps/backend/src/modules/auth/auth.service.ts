@@ -11,6 +11,8 @@ import {
 } from '@modules/common/errors/gateway-errors';
 import { env } from '@config/env';
 
+import { hashPassword, verifyPassword } from './utils/password.util';
+
 interface UserCredentials {
   id: string;
   roles: UserRole[];
@@ -30,8 +32,8 @@ export class AuthService {
     if (!user) {
       throw new InvalidCredentialsException();
     }
-    const passwordHash = Buffer.from(password).toString('base64');
-    if (user.password !== passwordHash) {
+    const isValid = await verifyPassword(password, user.password);
+    if (!isValid) {
       throw new InvalidCredentialsException();
     }
     return this.issueTokens({ id: user.id, roles: user.roles });
@@ -46,7 +48,7 @@ export class AuthService {
     if (password.length < 8) {
       throw new InvalidCredentialsException();
     }
-    const passwordHash = Buffer.from(password).toString('base64');
+    const passwordHash = await hashPassword(password);
     const user = await this.users.create({ email: normalizedEmail, password: passwordHash, roles });
     return { userId: user.id };
   }

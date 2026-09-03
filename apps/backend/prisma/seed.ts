@@ -1,4 +1,5 @@
 import { PrismaClient, Role, ProductStatus } from '@prisma/client';
+import { hashPassword } from '../src/modules/auth/utils/password.util';
 
 const prisma = new PrismaClient();
 
@@ -19,10 +20,11 @@ async function findOrCreateCategory(title: string, parentId: string | null) {
 }
 
 async function main() {
+  const hashedPassword = await hashPassword(adminPassword);
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: { password: Buffer.from(adminPassword).toString('base64'), roles: [Role.SELLER] },
-    create: { email: adminEmail, password: Buffer.from(adminPassword).toString('base64'), roles: [Role.SELLER] },
+    update: { password: hashedPassword, roles: [Role.SELLER] },
+    create: { email: adminEmail, password: hashedPassword, roles: [Role.SELLER] },
   });
 
   const categories = new Map<string, { id: string }>();
