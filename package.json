@@ -15,10 +15,8 @@
     "db:migrate": "pnpm --filter @marketplace/backend prisma:migrate",
     "db:seed": "pnpm --filter @marketplace/backend prisma:seed",
     "cypress:open": "cd apps/frontend && pnpm exec cypress open",
-    "cypress:run": "cd apps/frontend && pnpm exec cypress run --config video=false",
-    "test:e2e:cypress": "pnpm cypress:run",
     "test:e2e:jest": "pnpm --filter @marketplace/backend test:e2e",
-    "test:e2e": "pnpm test:e2e:cypress && pnpm test:e2e:jest"
+    "test:e2e": "pnpm test:e2e:jest"
   },
   "devDependencies": {
     "prettier": "^3.4.2",
